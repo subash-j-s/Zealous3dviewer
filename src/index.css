@@ -69,6 +69,14 @@
   }
 }
 
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  40% { opacity: 0.7; }
+  60% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
 .AppBg {
   background-color: var(
     --app-bg-color,

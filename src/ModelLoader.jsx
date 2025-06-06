@@ -86,7 +86,7 @@ const LoadingSpinner = () => (
   </div>
 );
 
-const ModelViewer = ({ model }) => {
+const ModelViewer = ({ model, position, rotation }) => {
   const { camera, controls } = useThree();
 
   useEffect(() => {
@@ -109,6 +109,13 @@ const ModelViewer = ({ model }) => {
       }
     }
   }, [model, camera, controls]);
+
+  useEffect(() => {
+    if (model && model.scene) {
+      model.scene.position.set(position.x, position.y, position.z);
+      model.scene.rotation.set(rotation.x, rotation.y, rotation.z);
+    }
+  }, [model, position, rotation]);
 
   if (!model) return null;
   return <primitive object={model.scene} />;
@@ -134,6 +141,9 @@ const ModelLoader = ({ setHierarchy, setSelectedModel, selectedSkybox, setShowPr
   const [uploadedModel, setUploadedModel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [presets, setPresets] = useState([]);
+  const [modelPosition, setModelPosition] = useState({ x: 0, y: 0, z: 0 });
+  const [modelRotation, setModelRotation] = useState({ x: 0, y: 0, z: 0 });
   const controlsRef = useRef();
 
   useEffect(() => {
@@ -142,6 +152,13 @@ const ModelLoader = ({ setHierarchy, setSelectedModel, selectedSkybox, setShowPr
     }
   
   }, [showPreview,  setHierarchy]);
+
+  // Load presets from model.json
+  useEffect(() => {
+    fetch("/model.json")
+      .then(res => res.json())
+      .then(data => setPresets(data.models || []));
+  }, []);
 
   // ✅ Update model when a new variant is selected
   useEffect(() => {
@@ -307,7 +324,11 @@ const AxesHelperComponent = ({
         
         {/* <CameraTracker setCameraPosition={setCameraPosition} /> */}
         <Center>
-          <ModelViewer model={uploadedModel} /> 
+          <ModelViewer
+            model={uploadedModel}
+            position={modelPosition}
+            rotation={modelRotation}
+          /> 
           
         </Center>
 
