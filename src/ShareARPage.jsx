@@ -157,35 +157,35 @@ const ShareARPage = () => {
       </div>
 
       <div style={{
-  position: "fixed",
-  bottom: 50,
-  left: "50%",
-  transform: "translateX(-50%)",
-  display: "flex",
-  gap: 3,
-  zIndex: 1000,
-  background: "rgba(255, 255, 255, 0.9)",
-  padding: "4px 6px",
-  borderRadius: "10px",
-  boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
-}}>
-  {[
-    { label: "Front", rotation: { x: 0, y: 0, z: 0 }, position: { x: 0, y: 0, z: 5 } },
-    { label: "Side", rotation: { x: 0, y: Math.PI / 2, z: 0 }, position: { x: 5, y: 0, z: 0 } },
-    { label: "Back", rotation: { x: 0, y: Math.PI, z: 0 }, position: { x: 0, y: 0, z: -5 } },
-  ].map((view, i) => (
-    <IconButton
-      key={i}
-      style={{ backgroundColor: color }}
-      onClick={() => {
-        setRotation(view.rotation);
-        setPosition(view.position);
-      }}
-    >
-      <img src="/icons/circle-line-icon.svg" alt={view.label} width={20} height={20} title={view.label} />
-    </IconButton>
-  ))}
-</div>
+          position: "fixed",
+          bottom: 50,
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          gap: 3,
+          zIndex: 1000,
+          background: "rgba(255, 255, 255, 0.9)",
+          padding: "4px 6px",
+          borderRadius: "10px",
+          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
+        }}>
+          {[
+            { label: "Front", rotation: { x: 0, y: 0, z: 0 }, position: { x: 0, y: 0, z: 5 } },
+            { label: "Side", rotation: { x: 0, y: Math.PI / 2, z: 0 }, position: { x: 5, y: 0, z: 0 } },
+            { label: "Back", rotation: { x: 0, y: Math.PI, z: 0 }, position: { x: 0, y: 0, z: -5 } },
+          ].map((view, i) => (
+            <IconButton
+              key={i}
+              style={{ backgroundColor: color }}
+              onClick={() => {
+                setRotation(view.rotation);
+                setPosition(view.position);
+              }}
+            >
+              <img src="/icons/circle-line-icon.svg" alt={view.label} width={20} height={20} title={view.label} />
+            </IconButton>
+          ))}
+        </div>
 
 
       <div style={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>

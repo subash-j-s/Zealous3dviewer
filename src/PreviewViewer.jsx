@@ -199,7 +199,6 @@ const getArViewerUrl = (modelUrl, type = "google") => {
 const Model = ({ modelUrl, position, rotation, scale }) => {
   const { scene } = useGLTF(modelUrl, true);
 
-  // Create a memoized clone of the scene to prevent React from mutating original
   const clonedScene = useMemo(() => {
     if (!scene) return null;
     const clone = scene.clone(true);
@@ -211,8 +210,21 @@ const Model = ({ modelUrl, position, rotation, scale }) => {
     return clone;
   }, [scene]);
 
+  // Apply rotation and position to the group
   return clonedScene ? (
-    <group position={[position.x, position.y, position.z]} rotation={[rotation.x, rotation.y, rotation.z]} scale={[scale, scale, scale]}>
+    <group
+      position={[
+        position.x || 0,
+        position.y || 0,
+        position.z || 0
+      ]}
+      rotation={[
+        (rotation.x || 0) * Math.PI / 180,
+        (rotation.y || 0) * Math.PI / 180,
+        (rotation.z || 0) * Math.PI / 180
+      ]}
+      scale={[scale, scale, scale]}
+    >
       <primitive object={clonedScene} />
     </group>
   ) : null;
@@ -404,9 +416,9 @@ const PreviewViewer = () => {
         boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)"
       }}>
         {[
-          { label: "Front", rotation: { x: 0, y: 0, z: 0 }, position: { x: 0, y: 0, z: 5 } },
-          { label: "Side", rotation: { x: 0, y: Math.PI / 2, z: 0 }, position: { x: 5, y: 0, z: 0 } },
-          { label: "Back", rotation: { x: 0, y: Math.PI, z: 0 }, position: { x: 0, y: 0, z: -5 } },
+          { label: "Front", rotation: { x: 5, y: 132, z: -53 }, position: { x: -0.09, y: 0.011965077426225657, z: 0.004718775272169129 } },
+          { label: "Side", rotation: { x: -10, y:-139, z: 58 }, position: { x: -0.66, y: 0.37, z: 0.6 } },
+          { label: "Back", rotation: { x: 87, y: 35, z: -41 }, position: { x: -2.48, y: 0.011965077426225657, z: 0.004718775272169129 } },
         ].map((view, i) => (
           <IconButton key={i} style={{ backgroundColor: color }} onClick={() => {
             console.log(`View: ${view.label}, Pos:`, view.position, 'Rot:', view.rotation);

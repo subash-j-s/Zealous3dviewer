@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { IconButton, Switch, Slider, ToggleButton, ToggleButtonGroup, Collapse } from '@mui/material';
 import Button from "@mui/material/Button";
 import Box from "@mui/joy/Box";
@@ -26,12 +26,29 @@ const Inspector = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [transformOpen, setTransformOpen] = useState(false);
 
+  // 0: original, 1-3: user slots
+  const [savedTransforms, setSavedTransforms] = useState([null, null, null, null]);
+  const originalTransform = useRef({ position: null, rotation: null });
+
   useEffect(() => {
     if (selectedModel?.scene) {
       const pos = selectedModel.scene.position;
       const rot = selectedModel.scene.rotation;
       setLivePosition({ x: pos.x, y: pos.y, z: pos.z });
       setLiveRotation({ x: rot.x * 180 / Math.PI, y: rot.y * 180 / Math.PI, z: rot.z * 180 / Math.PI });
+      // Save original transform when model changes
+      originalTransform.current = {
+        position: { x: pos.x, y: pos.y, z: pos.z },
+        rotation: { x: rot.x * 180 / Math.PI, y: rot.y * 180 / Math.PI, z: rot.z * 180 / Math.PI }
+      };
+      // Save original as slot 0
+      setSavedTransforms((prev) => [
+        {
+          position: { x: pos.x, y: pos.y, z: pos.z },
+          rotation: { x: rot.x * 180 / Math.PI, y: rot.y * 180 / Math.PI, z: rot.z * 180 / Math.PI }
+        },
+        prev[1], prev[2], prev[3]
+      ]);
     }
   }, [selectedModel?.scene]);
 
@@ -59,6 +76,33 @@ const Inspector = ({
     const updated = { ...liveRotation, [axis]: value };
     setLiveRotation(updated);
     updateModelTransform(livePosition, updated);
+  };
+
+  // Save current transform to a slot (1-3)
+  const saveTransform = (index) => {
+    if (index === 0) return; // Prevent overwriting original
+    const newTransforms = [...savedTransforms];
+    newTransforms[index] = {
+      position: { ...livePosition },
+      rotation: { ...liveRotation }
+    };
+    setSavedTransforms(newTransforms);
+    // Restore original transform after saving
+    if (originalTransform.current.position && originalTransform.current.rotation) {
+      setLivePosition({ ...originalTransform.current.position });
+      setLiveRotation({ ...originalTransform.current.rotation });
+      updateModelTransform(originalTransform.current.position, originalTransform.current.rotation);
+    }
+  };
+
+  // Recall transform from a slot (0-3)
+  const recallTransform = (index) => {
+    const saved = savedTransforms[index];
+    if (saved) {
+      setLivePosition(saved.position);
+      setLiveRotation(saved.rotation);
+      updateModelTransform(saved.position, saved.rotation);
+    }
   };
 
   return (
@@ -145,6 +189,129 @@ const Inspector = ({
                   />
                 </Box>
               ))}
+
+              {/* Save buttons in a single row */}
+              <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'center' }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                  onClick={() => saveTransform(1)}
+                  sx={{
+                    fontSize: '9px',
+                    minWidth: 28,
+                    minHeight: 18,
+                    px: 1,
+                    py: 0.2,
+                    borderRadius: 2
+                  }}
+                >
+                  1
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                  onClick={() => saveTransform(2)}
+                  sx={{
+                    fontSize: '9px',
+                    minWidth: 28,
+                    minHeight: 18,
+                    px: 1,
+                    py: 0.2,
+                    borderRadius: 2
+                  }}
+                >
+                  2
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="success"
+                  onClick={() => saveTransform(3)}
+                  sx={{
+                    fontSize: '9px',
+                    minWidth: 28,
+                    minHeight: 18,
+                    px: 1,
+                    py: 0.2,
+                    borderRadius: 2
+                  }}
+                >
+                  3
+                </Button>
+              </Box>
+
+              {/* Recall buttons in a single row */}
+            <Box sx={{ display: 'flex', gap: 0.5, mt: 1, justifyContent: 'center' }}>
+              {/* <Button
+                size="small"
+                variant={savedTransforms[0] ? "contained" : "outlined"}
+                color={savedTransforms[0] ? "primary" : "inherit"}
+                disabled={!savedTransforms[0]}
+                onClick={() => recallTransform(0)}
+                sx={{
+                  fontSize: '8px',
+                  minWidth: 22,
+                  minHeight: 14,
+                  p:0.8,
+                  borderRadius: 2
+                }}
+              >
+                Default
+              </Button> */}
+              <Button
+                size="small"
+                variant={savedTransforms[1] ? "contained" : "outlined"}
+                color={savedTransforms[1] ? "primary" : "inherit"}
+                disabled={!savedTransforms[1]}
+                onClick={() => recallTransform(1)}
+                sx={{
+                  fontSize: '8px',
+                  minWidth: 22,
+                  minHeight: 14,
+                  px: 0.5,
+                  py: 0.1,
+                  borderRadius: 2
+                }}
+              >
+                1
+              </Button>
+              <Button
+                size="small"
+                variant={savedTransforms[2] ? "contained" : "outlined"}
+                color={savedTransforms[2] ? "primary" : "inherit"}
+                disabled={!savedTransforms[2]}
+                onClick={() => recallTransform(2)}
+                sx={{
+                  fontSize: '8px',
+                  minWidth: 22,
+                  minHeight: 14,
+                  px: 0.5,
+                  py: 0.1,
+                  borderRadius: 2
+                }}
+              >
+                2
+              </Button>
+              <Button
+                size="small"
+                variant={savedTransforms[3] ? "contained" : "outlined"}
+                color={savedTransforms[3] ? "primary" : "inherit"}
+                disabled={!savedTransforms[3]}
+                onClick={() => recallTransform(3)}
+                sx={{
+                  fontSize: '8px',
+                  minWidth: 22,
+                  minHeight: 14,
+                  px: 0.5,
+                  py: 0.1,
+                  borderRadius: 2
+                }}
+              >
+                3
+              </Button>
+            </Box>
             </Box>
           </Collapse>
         </Box>
@@ -152,9 +319,6 @@ const Inspector = ({
     </Box>
   );
 };
-
-
-
 
 const BackgroundSetting = ({ setModelSettings }) => {
   const defaultColor = "#EBEBEB";
