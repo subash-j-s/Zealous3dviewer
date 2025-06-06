@@ -1,0 +1,63 @@
+/* BackgroundChanger.css */
+
+.inspector-container {
+  padding: 16px;
+}
+
+.inspector-heading {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.background-changer-section {
+  margin-top: 2rem;
+}
+
+.background-changer-heading {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.color-picker-container {
+  resize: horizontal;
+  overflow: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.form-label {
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+.radio-group {
+  gap: 16px;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+.color-circle {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio-button {
+  display: contents;
+  --variant-borderWidth: 2px;
+}
+
+.radio-focus {
+  --joy-focus-outlineOffset: 4px;
+}
+

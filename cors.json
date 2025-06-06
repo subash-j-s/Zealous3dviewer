@@ -1,0 +1,15 @@
+[
+  {
+    "origin": [
+      "https://z-space-3d.firebaseapp.com",
+      "http://localhost:5174"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": [
+      "Content-Type",
+      "Access-Control-Allow-Origin",
+      "Authorization"
+    ]
+  }
+]

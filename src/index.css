@@ -1,0 +1,647 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+.main-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 2px solid  #D3D3D3;
+}
+
+.app-container {
+  background-color: #ebebeb;
+  width:88%; /* Changed from 100% to 70% */
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 2s linear infinite;
+}
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 20px;
+  z-index: 100;
+  flex-direction: column;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.AppBg {
+  background-color: var(
+    --app-bg-color,
+    #ebebeb
+  ); /* Fallback to #8b8b8b if variable not set */
+  transition: background-color 0.3s ease; /* Optional smooth transition */
+}
+
+.hierachystyle{
+  background-color: #f3f3f3;
+  width: 15%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 10px;
+  padding-top: 10px;
+}
+
+.Inspectorstyle {
+  background-color: #f3f3f3;
+  width: 350px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  /* padding: 10px; */
+  /* padding-top: 10px; */
+  z-index: 1000;
+}
+
+/* General Container */
+.model-loader-container {
+  width: 100%; /* Full width inside app-container */
+  height: 100%; /* Full height inside app-container */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.upload-options {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+  width: 300px;
+  max-width: 90%;
+  font-family: "Inter", sans-serif;
+}
+
+/* Drag and Drop Message */
+.drag-drop-message {
+  font-weight: 600;
+  font-size: 1.2em;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.file-input {
+  width: 100%;
+  padding: 10px;
+  border: 2px dashed #1976d2;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.file-input:hover {
+  background-color: #e3f2fd;
+  border-color: #0d47a1;
+}
+
+.file-input:focus {
+  outline: none;
+  border-color: #0d47a1;
+  box-shadow: 0px 0px 5px rgba(13, 71, 161, 0.5);
+}
+
+.Options {
+  font-size: 1em;
+  color: white;
+  background-color: #1976d2; /* Matches MUI's contained button default */
+  padding: 10px 20px;
+  border-radius: 4px;
+}
+
+.HierarchyHeader {
+  font-size: medium;
+}
+
+/* Container styles */
+.container {
+  resize: horizontal; /* Corrected from 'horizrowontal' */
+  overflow: auto;
+  padding: 0 16px;
+}
+
+/* Form label styles */
+.label {
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* Radio group styles */
+.radioGroup {
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+
+/* Sheet (color circle) styles */
+.sheet {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Radio button styles */
+.radio {
+  display: contents;
+  --variant-borderWidth: 2px;
+}
+
+/* Focus styles */
+.focusVisible {
+  outline-width: 2px;
+}
+
+.overlay-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none; /* Allows clicks through to underlying elements */
+}
+
+.overlay-controls button {
+  pointer-events: auto; /* Re-enable clicks for the button */
+}
+
+canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+/* Fullscreen mode for preview */
+.preview-mode {
+  width: 100%;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Exit button in the top-right corner */
+.exit-preview {
+  position: absolute;
+  top: 70px;
+  left: 25px;
+  background-color: white;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 1100;
+  width: 58px;
+  height: 45px;
+}
+
+.exit-preview:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.share-button {
+  position: absolute;
+  top: 50px;
+  left: 10px;
+  background-color: rgba(13, 0, 255, 0.8);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  display: flex;
+  align-items: center;
+  border-radius: 20%;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 1100;
+}
+
+.share-button:hover {
+  background-color: rgb(152, 152, 152);
+}
+
+.share-ar-button {
+  position: absolute;
+  top: 70px;
+  left: 85px;
+  background-color: white;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 1100;
+  width: 58px;
+  height: 45px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;  
+}
+
+.share-ar-button:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.web-preview {
+  position: absolute;
+  top: 50px;
+  right: 10px;
+  background-color: rgba(97, 4, 218, 0.923);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 1100;
+}
+
+/* Hide sidebar panels when in preview mode */
+.hide-in-preview {
+  display: none !important;
+}
+
+/* Apply to the "No model Uploaded" message */
+.no-model-message {
+  font-weight: bold; /* Make text bold */
+  text-align: center; /* Center text */
+  font-size: 1.2em; /* Adjust size for better visibility */
+  color: #333; /* Darker text for readability */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%; /* Take full height to properly center */
+}
+
+/* Styling for the PreviewViewer container */
+.preview-viewer-container {
+  position: absolute;
+  top: 50%;
+  left: 10px; /* Adjust to move it to the left corner */
+  transform: translateY(-50%); /* Center it vertically */
+  width: 100px; /* Set width for the preview box */
+  height: 300px; /* Set height for the preview box */
+  border: 2px;
+  border-radius: 20px; /* Rounded corners */
+  /* box-shadow: 0 4px 10px rgba(148, 0, 0, 0.1); Soft shadow for depth */
+  display: flex;
+  justify-content: center; /* Center content horizontally */
+  align-items: center; /* Center content vertically */
+  padding: 16px; /* Padding inside the box */
+  z-index: 10; /* Make sure it stays on top */
+  animation: fadeIn 0.3s ease-out; /* Fade-in animation */
+  flex-direction: column; /* Arrange children in a column layout */
+  gap: 10px;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+/* Styling for the move button */
+.preview-viewer-container .movebutton {
+  background-color: #fbfbfb; /* Blue color */
+  color: white;
+  width: 47px; /* Set a fixed width for the button */
+  height: 47px; /* Set a fixed height for the button */
+  border-radius: 9px; /* Make it circular */
+  display: flex;
+  align-items: center; /* Vertically center the content */
+  /*justify-content: flex-end;  Horizontally center the content */
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effect for the button */
+.preview-viewer-container .movebutton:hover {
+  background-color: #f4f4f4; /* Darker blue when hovered */
+}
+
+/* Styling for the button icon */
+.preview-viewer-container .movebutton img {
+  width: 24px; /* Icon size */
+  height: 24px; /* Icon size */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Ensure no padding around the image */
+}
+
+/* Styling for the move button */
+.preview-viewer-container .zoomout {
+  background-color: #fbfbfb; /* Blue color */
+  color: white;
+  width: 47px; /* Set a fixed width for the button */
+  height: 47px; /* Set a fixed height for the button */
+  border-radius: 9px; /* Make it circular */
+  display: flex;
+  align-items: center; /* Vertically center the content */
+  /*justify-content: flex-end;  Horizontally center the content */
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effect for the button */
+.preview-viewer-container .zoomout:hover {
+  background-color: #f4f4f4; /* Darker blue when hovered */
+}
+
+/* Styling for the button icon */
+.preview-viewer-container .zoomout img {
+  width: 24px; /* Icon size */
+  height: 24px; /* Icon size */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Ensure no padding around the image */
+}
+
+/* Styling for the move button */
+.preview-viewer-container .zoomin {
+  background-color: #fbfbfb; /* Blue color */
+  color: white;
+  width: 47px; /* Set a fixed width for the button */
+  height: 47px; /* Set a fixed height for the button */
+  border-radius: 9px; /* Make it circular */
+  display: flex;
+  align-items: center; /* Vertically center the content */
+  /*justify-content: flex-end;  Horizontally center the content */
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.css-74d805-MuiButtonBase-root-MuiButton-root {
+  min-width: 47px !important;
+  background-color: #ffffff !important;
+  color: #3e3e3e !important;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  border: 0;
+  display: flex;
+  font-family: "Inter", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  line-height: 18px;
+  text-align: left;
+  letter-spacing: 0px;
+  text-transform: uppercase;
+  opacity: 1;
+}
+
+/* Hover effect for the button */
+.preview-viewer-container .zoomin:hover {
+  background-color: #f4f4f4; /* Darker blue when hovered */
+}
+
+/* Styling for the button icon */
+.preview-viewer-container .zoomin img {
+  width: 24px; /* Icon size */
+  height: 24px; /* Icon size */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Ensure no padding around the image */
+}
+.css-1sh91j5-MuiButton-startIcon {
+  display: inherit;
+  margin-right: 0px !important;
+  margin-left: 0px !important;
+}
+
+/* Styling for the move button */
+.preview-viewer-container .colorpicker {
+  background-color: #fbfbfb; /* Blue color */
+  color: white;
+  width: 47px; /*Set a fixed width for the button */
+  height: 47px; /* Set a fixed height for the button */
+  border-radius: 9px; /* Make it circular */
+  display: flex;
+  align-items: center; /* Vertically center the content */
+  /*justify-content: flex-start;  Horizontally center the content */
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effect for the button */
+.preview-viewer-container .colorpicker:hover {
+  background-color: #f4f4f4; /* Darker blue when hovered */
+}
+
+/* Styling for the button icon */
+.preview-viewer-container .colorpicker img {
+  width: 29px; /* Icon size */
+  height: 29px; /* Icon size */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Ensure no padding around the image */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .preview-viewer-container {
+    width: 80px;
+    height: 240px;
+    left: 5px;
+  }
+}
+
+.Arviewbutton-container {
+  position: absolute;
+  top: 50px;
+  left: 1670px;
+  right: 20px;
+  transform: translateY(-50%); /* Center it vertically */
+  /*width: 182px;  Set width for the preview box */
+  height: 48px; /* Set height for the preview box */
+  border: 0px;
+  border-radius: 10px; /* Rounded corners */
+  display: block;
+  justify-content: center; /* Center content horizontally */
+  align-items: center; /* Center content vertically */
+  padding: 6px; /* Padding inside the box */
+  z-index: 10; /* Make sure it stays on top */
+  animation: fadeIn 0.3s ease-out; /* Fade-in animation */
+  flex-direction: column; /* Arrange children in a column layout */
+  gap: 10px;
+  margin: 0;
+}
+.Aricon-icon {
+  margin-right: 0px !important;
+  margin-left: -1px !important;
+  margin-top: 1px !important;
+  margin-bottom: 3px !important;
+}
+
+
+.Aricon-icon dark {
+  margin-right: 1px !important;
+  margin-left: -2px !important;
+  margin-top: 1px !important;
+  margin-bottom: 3px !important;
+ background-color: #ffffff; 
+}
+
+.Arviewbutton-container .ARbutton {
+  background-color: #ffffff; /* White background */
+  color: #3e3e3e; /* Dark gray text */
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  border: 0;
+  display: flex;
+  font-family: "Inter", sans-serif;
+  font-weight: 600; /* Semi-bold */
+  font-size: 14px;
+  line-height: 18px;
+  text-align: left;
+  letter-spacing: 0px;
+  text-transform: uppercase;
+  opacity: 1;
+}
+.Arviewbutton-container .ARbutton img {
+  width: 25px; /* Icon size */
+  height: 28px; /* Icon size */
+  margin: 0; /* Remove any default margin */
+  padding: 0; /* Ensure no padding around the image */
+  left: 10px;
+  background-color: white ;
+}
+
+/* .Arviewbutton-container .ARbutton:hover {
+  background-color: #2c3970; /* Darker blue when hovered 
+} */
+
+/* Variants Tab Container */
+.variant-tab {
+  position: fixed;
+  top: 30%;
+  right: 20px;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: right 0.3s ease-in-out;
+}
+
+/* Variants List Container */
+.variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+/* Open State */
+.variant-tab.open {
+  right: 20px; /* Slides into view */
+}
+
+/* Open State for Variants List */
+.variant-tab.open .variant-list {
+  max-height: 800px; /* Adjust based on content */
+  padding: 10px;
+}
+
+/* Variant Buttons */
+.variant-list button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 5px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.variant-list button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Variant Images */
+.variant-list img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+  border: 2px solid #ddd;
+  transition: border-color 0.3s ease;
+}
+
+.variant-list img:hover {
+  border-color: #414141;
+}
