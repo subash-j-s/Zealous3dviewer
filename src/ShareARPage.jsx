@@ -7,7 +7,7 @@ import { OrbitControls, Environment,Center, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { Button, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
-import CircularProgress from "@mui/material/CircularProgress";
+import { useTransformRecall } from "./TransformRecallContext";
 
 const ShareARPage = () => {
   const { projectName } = useParams();
@@ -20,11 +20,13 @@ const ShareARPage = () => {
   const [scale, setScale] = useState(1);
   const [color, setColor] = useState("#ffffff");
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 }); // ✅ added
+  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 }); // radians
   const controlsRef = useRef();
   const cameraRef = useRef();
   const [modelLoading, setModelLoading] = useState(false);
-
+  const [modelCenter, setModelCenter] = useState(null);
+  const [modelSize, setModelSize] = useState(null);
+  const { presets } = useTransformRecall();
 
   useEffect(() => {
     const loadARData = async () => {
@@ -82,9 +84,24 @@ const ShareARPage = () => {
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
       {modelLoading && (
-        <div className="loading-overlay">
-          <CircularProgress size={50} thickness={4} />
-          <p style={{ marginTop: 10 }}>Loading Model...</p>
+        <div className="loading-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(255,255,255,0.85)',
+          zIndex: 2000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <img src="/icons/move2.png" alt="Loading Icon" style={{ width: 70, height: 70, marginBottom: 24, animation: 'spin 1.2s linear infinite' }} />
+          <div style={{ marginTop: 10, fontWeight: 700, fontSize: 28, color: '#222', letterSpacing: 2, textShadow: '0 2px 8px #fff' }}>
+            Loading...
+          </div>
+          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
         </div>
       )}
 
@@ -98,28 +115,28 @@ const ShareARPage = () => {
         <OrbitControls ref={controlsRef} />
         <Environment preset={skybox} background={false} />
         <Center>
-          {modelUrl && (
-          <GLBModel
-            modelUrl={modelUrl}
-            color={color}
-            scale={scale}
-            position={position}
-            rotation={rotation} // ✅ added
-            setModelLoading={setModelLoading}
-            onModelLoaded={(size, center) => {
-              if (cameraRef.current) {
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const fov = cameraRef.current.fov * (Math.PI / 180);
-                const distance = maxDim / (2 * Math.tan(fov / 2));
-                cameraRef.current.position.set(center.x, center.y, center.z + distance * 1.5);
-                cameraRef.current.lookAt(center);
-              }
-            }}
-          />
-        )}
-
+          {modelUrl && position && rotation && (
+            <GLBModel
+              modelUrl={modelUrl}
+              color={color}
+              scale={scale}
+              position={position}
+              rotation={rotation}
+              setModelLoading={setModelLoading}
+              onModelLoaded={(size, center) => {
+                setModelSize(size);
+                setModelCenter(center);
+                if (cameraRef.current) {
+                  const maxDim = Math.max(size.x, size.y, size.z);
+                  const fov = cameraRef.current.fov * (Math.PI / 180);
+                  const distance = maxDim / (2 * Math.tan(fov / 2));
+                  cameraRef.current.position.set(center.x, center.y, center.z + distance * 1.5);
+                  cameraRef.current.lookAt(center);
+                }
+              }}
+            />
+          )}
         </Center>
-        
       </Canvas>
 
       <div
@@ -169,20 +186,27 @@ const ShareARPage = () => {
           borderRadius: "10px",
           boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
         }}>
-          {[
-            { label: "Front", rotation: { x: 0, y: 0, z: 0 }, position: { x: 0, y: 0, z: 5 } },
-            { label: "Side", rotation: { x: 0, y: Math.PI / 2, z: 0 }, position: { x: 5, y: 0, z: 0 } },
-            { label: "Back", rotation: { x: 0, y: Math.PI, z: 0 }, position: { x: 0, y: 0, z: -5 } },
-          ].map((view, i) => (
+          {[1, 2, 3].map((index, i) => (
             <IconButton
-              key={i}
+              key={index}
               style={{ backgroundColor: "#eee" }}
               onClick={() => {
-                setRotation(view.rotation);
-                setPosition(view.position);
+                const preset = presets[index];
+                if (preset) {
+                  setRotation({
+                    x: preset.rotation.x * Math.PI / 180,
+                    y: preset.rotation.y * Math.PI / 180,
+                    z: preset.rotation.z * Math.PI / 180,
+                  });
+                  setPosition({
+                    x: preset.position.x,
+                    y: preset.position.y,
+                    z: preset.position.z
+                  });
+                }
               }}
             >
-              <img src="/icons/circle-line-icon.svg" alt={view.label} width={20} height={20} title={view.label} />
+              <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
             </IconButton>
           ))}
         </div>
@@ -193,7 +217,7 @@ const ShareARPage = () => {
           variant="contained"
           startIcon={<img className="Aricon-icon" src="/icons/Aricon.svg" alt="AR" />}
           style={{ backgroundColor: "#eee" }}
-          sx={{ color: 'black', fontWeight: 'bold' }}
+          sx={{ color: 'black', fontWeight: 'bold',gap:1, }}
           onClick={openARView}
         >
           See in your Space
@@ -238,6 +262,13 @@ const GLBModel = ({ modelUrl, color, scale, position, rotation, onModelLoaded, s
 
     return () => clearTimeout(done);
   }, [modelUrl, color]);
+
+  useEffect(() => {
+    if (modelRef.current) {
+      modelRef.current.position.set(position.x, position.y, position.z);
+      modelRef.current.rotation.set(rotation.x, rotation.y, rotation.z);
+    }
+  }, [position, rotation]);
 
   return (
     <primitive

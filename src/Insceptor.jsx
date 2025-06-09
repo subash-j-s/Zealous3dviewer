@@ -12,20 +12,21 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Input } from '@mui/joy';
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
-import {
-  EffectComposer,
-  Bloom,
-  Vignette,
-  SSAO,
-  DepthOfField,
-  Noise,
-  HueSaturation,
-  ChromaticAberration,
-  ToneMapping,
-  BrightnessContrast,
-  SMAA
-} from '@react-three/postprocessing';
+// import {
+//   EffectComposer,
+//   Bloom,
+//   Vignette,
+//   SSAO,
+//   DepthOfField,
+//   Noise,
+//   HueSaturation,
+//   ChromaticAberration,
+//   ToneMapping,
+//   BrightnessContrast,
+//   SMAA
+// } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { useTransformRecall } from "./TransformRecallContext";
 
 // RenderEffects Component
 const RenderEffects = ({ effects }) => {
@@ -51,7 +52,8 @@ const Inspector = ({
   setShowPreview,
   setModelSettings,
   setShowGrid,
-  showGrid
+  showGrid,
+  modelLoading // <-- Add modelLoading prop
 }) => {
   const [livePosition, setLivePosition] = useState({ x: 0, y: 0, z: 0 });
   const [liveRotation, setLiveRotation] = useState({ x: 0, y: 0, z: 0 });
@@ -121,6 +123,8 @@ const Inspector = ({
   };
 
   // Save current transform to a slot (1-3)
+  const { savePreset, recallPreset, presets } = useTransformRecall();
+  const [allSavedPrompt, setAllSavedPrompt] = useState(false);
   const saveTransform = (index) => {
     if (index === 0) return; // Prevent overwriting original
     const newTransforms = [...savedTransforms];
@@ -129,6 +133,18 @@ const Inspector = ({
       rotation: { ...liveRotation }
     };
     setSavedTransforms(newTransforms);
+    savePreset(index, livePosition, liveRotation); // <-- Save to context
+    // Check if all three slots are filled
+    if (newTransforms[1] && newTransforms[2] && newTransforms[3]) {
+      setAllSavedPrompt(true);
+      setTimeout(() => setAllSavedPrompt(false), 2500);
+      // Restore original transform after all 3 are saved
+      if (originalTransform.current.position && originalTransform.current.rotation) {
+        setLivePosition({ ...originalTransform.current.position });
+        setLiveRotation({ ...originalTransform.current.rotation });
+        updateModelTransform(originalTransform.current.position, originalTransform.current.rotation);
+      }
+    }
     // Restore original transform after saving
     if (originalTransform.current.position && originalTransform.current.rotation) {
       setLivePosition({ ...originalTransform.current.position });
@@ -190,7 +206,7 @@ const Inspector = ({
           {/* Camera Section */}
           <Box onClick={() => setTransformOpen(!transformOpen)} sx={{ cursor: 'pointer',  display: 'flex', alignItems: 'center', 
             justifyContent: 'space-between', mb: 1,  borderRadius: 5, bgcolor: 'background.level1',ml: -0.9 }}>
-            <Typography level="subtitle1" sx={{ fontSize: '12px',  }}>Camera</Typography>
+            <Typography level="subtitle1" sx={{ fontSize: '12px',  }}>Model Position preset</Typography>
             {transformOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </Box>
 
@@ -307,7 +323,11 @@ const Inspector = ({
                   3
                 </Button>
               </Box>
-
+              {allSavedPrompt && (
+                <Box sx={{ mt: 1, textAlign: 'center', color: 'green', fontWeight: 'bold', fontSize: '12px' }}>
+                  All 3 positions and rotations saved!
+                </Box>
+              )}
 
               {/* Recall buttons in a single row */}
             <Box sx={{ display: 'flex', gap: 0.5, mt: 1, justifyContent: 'center' }}>
@@ -355,7 +375,30 @@ const Inspector = ({
 
       {skyboxFading && (
                 <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'background.paper', opacity: 0.7,  zIndex: 9999,
-                    pointerEvents: 'none',  transition: 'opacity 0.4s',  animation: 'fadeInOut 0.4s linear' }}/> )}  </Box>
+                    pointerEvents: 'none',  transition: 'opacity 0.4s',  animation: 'fadeInOut 0.4s linear' }}/> )}
+
+      {modelLoading && (
+        <div className="loading-overlay" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(255,255,255,0.85)',
+          zIndex: 2000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <img src="/icons/move2.png" alt="Loading Icon" style={{ width: 70, height: 70, marginBottom: 24, animation: 'spin 1.2s linear infinite' }} />
+          <div style={{ marginTop: 10, fontWeight: 700, fontSize: 28, color: '#222', letterSpacing: 2, textShadow: '0 2px 8px #fff' }}>
+            Loading...
+          </div>
+          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
+    </Box>
                 );
               };
 

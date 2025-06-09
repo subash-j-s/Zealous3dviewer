@@ -6,29 +6,32 @@ import App from "./App.jsx";
 import SharePage from "./SharePage.jsx";
 import Login from "./Login.jsx";
 import ShareARPage from "./ShareARPage.jsx";
+import { TransformRecallProvider } from "./TransformRecallContext";
 
 const Main = () => {
   const [authenticated, setAuthenticated] = useState(false);
 
   return (
-    <Router>
-      <Routes>
-        {/* ✅ Login Page */}
-        <Route path="/login" element={<Login setAuthenticated={setAuthenticated} />} />
+    <TransformRecallProvider>
+      <Router>
+        <Routes>
+          {/* ✅ Login Page */}
+          <Route path="/login" element={<Login setAuthenticated={setAuthenticated} />} />
 
-        {/* ✅ Protected Route - Redirects to Login if not authenticated */}
-        <Route path="/app" element={authenticated ? <App /> : <Navigate to="/login" />} />
+          {/* ✅ Protected Route - Redirects to Login if not authenticated */}
+          <Route path="/app" element={authenticated ? <App /> : <Navigate to="/login" />} />
 
-        {/* ✅ Share Page - Does not require login */}
-        <Route path="/share/:projectName" element={<SharePage />} />
+          {/* ✅ Share Page - Does not require login */}
+          <Route path="/share/:projectName" element={<SharePage />} />
 
-        {/* ✅ Share AR Page - Does not require login */}
-        <Route path="/share-ar/:projectName" element={<ShareARPage />} />
+          {/* ✅ Share AR Page - Does not require login */}
+          <Route path="/share-ar/:projectName" element={<ShareARPage />} />
 
-        {/* ✅ Default Route - Redirect to Login */}
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
-    </Router>
+          {/* ✅ Default Route - Redirect to Login */}
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      </Router>
+    </TransformRecallProvider>
   );
 };
 

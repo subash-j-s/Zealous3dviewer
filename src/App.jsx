@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { QRCodeCanvas } from "qrcode.react"; // Import QRCodeCanvas
+import { TransformRecallProvider } from "./TransformRecallContext";
 
 export default function App() {
   const [hierarchy, setHierarchy] = useState([]);
@@ -433,6 +434,7 @@ export default function App() {
   
 
   return (
+    <TransformRecallProvider>
     <div style={{ display: 'flex', height: '100vh' }}>
     <div   className={`main-layout ${showPreview ? "preview-mode" : ""}`}>
       {/* {!showPreview && (
@@ -686,5 +688,6 @@ export default function App() {
 
     </div>
     </div>
+    </TransformRecallProvider>
   );
 }

@@ -14,6 +14,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
+import { useTransformRecall } from "./TransformRecallContext";
 
 
 const getArViewerUrl = (modelUrl, type = "google") => {
@@ -21,17 +22,19 @@ const getArViewerUrl = (modelUrl, type = "google") => {
   return modelUrl;
 };
 
-const Model = ({ modelUrl, color, scale, position, rotation }) => {
+const Model = ({ modelUrl, color, scale, position, rotation, setModelLoading }) => {
   const { scene } = useGLTF(modelUrl, true);
   const modelRef = useRef();
 
   useEffect(() => {
     if (!scene) return;
+    setModelLoading?.(true);
     scene.traverse((child) => {
       if (child.isMesh && child.material) {
         child.material.color.set(color);
       }
     });
+    setTimeout(() => setModelLoading?.(false), 1000);
   }, [scene, color]);
 
   return scene ? (
@@ -59,7 +62,11 @@ const PreviewViewer = () => {
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
   const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 }); // ✅ added
 
+  const [modelLoading, setModelLoading] = useState(false);
+
   const arType = "google";
+
+  const { savePreset } = useTransformRecall();
 
   useEffect(() => {
     // Replace with your model URL
@@ -238,8 +245,8 @@ useEffect(() => {
 
       
 
-      <div style={{ position: "absolute", top: 40, right: 30, zIndex: 10 }}>
-        <Button  style={{ backgroundColor: "#eee", }} sx={{color:'black', fontWeight:'bold'}}
+      <div style={{ position: "absolute", top: 20, right: 30, zIndex: 10 }}>
+        <Button  style={{ backgroundColor: "#eee", }} sx={{color:'black', fontWeight:'bold',gap: 1,}}
           className="ARbutton"
           variant="contained"
           startIcon={<img className="Aricon-icon" src="/icons/Aricon.svg" alt="AR icon" />}
@@ -280,7 +287,7 @@ useEffect(() => {
       </div> */}
 
 
-      {/* === Bottom center: 3 buttons from model.json === */}
+      {/* === Bottom center: 3 buttons for Front/Side/Back using shared presets === */}
       <div style={{
         position: "fixed",
         bottom: 50,
@@ -294,31 +301,26 @@ useEffect(() => {
         borderRadius: "10px",
         boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)"
       }}>
-        {models.slice(0, 3).map((model, i) => (
+        {[1, 2, 3].map((index, i) => (
           <IconButton
-            key={model.id}
+            key={index}
             style={{ backgroundColor: "#eee", flexDirection: "column" }}
             onClick={() => {
-              const newRotation = {
-                x: (model.rotation.x || 0) * Math.PI / 180,
-                y: (model.rotation.y || 0) * Math.PI / 180,
-                z: (model.rotation.z || 0) * Math.PI / 180,
-              };
-              console.log(
-                `Button ${model.name} clicked`,
-                "\nPosition:", model.position,
-                "\nRotation (deg):", model.rotation,
-                "\nRotation (rad):", newRotation,
-                "\nScale:", model.scale
-              );
-              setRotation(newRotation);
-              setPosition(model.position);
-              setScale(model.scale.x);
+              const { presets } = useTransformRecall();
+              const preset = presets[index];
+              if (preset) {
+                setRotation({
+                  x: (preset.rotation.x || 0) * Math.PI / 180,
+                  y: (preset.rotation.y || 0) * Math.PI / 180,
+                  z: (preset.rotation.z || 0) * Math.PI / 180,
+                });
+                setPosition(preset.position);
+                setScale(1.5);
+              }
             }}
-            title={model.name}
+            title={["Front", "Side", "Back"][i]}
           >
-            <img src="/icons/circle-line-icon.svg" alt={model.name} width={20} height={20} title={model.name} />
-            <span style={{ fontSize: 10 }}>{model.name}</span>
+            <img src="/icons/circle-line-icon.svg" alt={["Front", "Side", "Back"][i]} width={20} height={20} title={["Front", "Side", "Back"][i]} />
           </IconButton>
         ))}
       </div>
@@ -345,6 +347,29 @@ useEffect(() => {
           <p style={{ textAlign: "center" }}>Scan to view the model in AR.</p>
         </DialogContent>
       </Dialog>
+
+      {/* Loading overlay */}
+      {modelLoading && (
+  <div className="loading-overlay" style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    background: 'rgba(255,255,255,0.85)',
+    zIndex: 2000,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}>
+    <img src="/icons/move2.png" alt="Loading Icon" style={{ width: 70, height: 70, marginBottom: 24, animation: 'spin 1.2s linear infinite' }} />
+    <div style={{ marginTop: 10, fontWeight: 700, fontSize: 28, color: '#222', letterSpacing: 2, textShadow: '0 2px 8px #fff' }}>
+      Loading...
+    </div>
+    <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+  </div>
+)}
     </div>
   );
 };
