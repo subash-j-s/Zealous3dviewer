@@ -1,11 +1,8 @@
 //App.jsx
 
-import React, { useState } from "react";
-import Viewcanvas from "./viewcanvas";
-import Hierarchy from "./hierarchy";
+import { useState } from "react";
 import Insceptor from "./Insceptor";
 import ModelLoader from "./ModelLoader";
-import WebPreview from "./Webpreview";
 import PreviewViewer from "./PreviewViewer";
 import { Storage } from "@aws-amplify/storage";
 import { storage, ref, uploadBytes, getDownloadURL } from "./firebase"; // Import Firebase
@@ -20,7 +17,6 @@ import {
 } from "@mui/material";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { QRCodeCanvas } from "qrcode.react"; // Import QRCodeCanvas
-import { IconButton, Tooltip } from '@mui/material';
 
 export default function App() {
   const [hierarchy, setHierarchy] = useState([]);
@@ -683,13 +679,10 @@ export default function App() {
             onToggleVariant={handleToggleVariant} // Pass the toggle function
             variants={variants} // Pass the variants array
             currentVariantIndex={currentVariantIndex} // Pass the current variant index
-           
-            
+             
           />
         </div>
       )}
-
-      
 
     </div>
     </div>

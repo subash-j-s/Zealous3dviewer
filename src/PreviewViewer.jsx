@@ -15,6 +15,7 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 
+
 const getArViewerUrl = (modelUrl, type = "google") => {
   if (type === "google") return `https://arvr.google.com/?model=${encodeURIComponent(modelUrl)}`;
   return modelUrl;
@@ -38,8 +39,8 @@ const Model = ({ modelUrl, color, scale, position, rotation }) => {
       ref={modelRef}
       object={scene}
       scale={scale}
-            position={position}
-            rotation={rotation}
+      position={position}
+      rotation={rotation}
     />
   ) : null;
 };
@@ -48,19 +49,22 @@ const PreviewViewer = () => {
   const [modelUrl, setModelUrl] = useState(null);
   const [qrOpen, setQrOpen] = useState(false);
   const [shortUrl, setShortUrl] = useState(null);
+
+  const [color, setColor] = useState("#ffffff");
+  const [bgColor, setBgColor] = useState('#ffffff');
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const colorPickerAnchorRef = useRef(null);
 
   const [scale, setScale] = useState(1);
-  const [color, setColor] = useState("#ffffff");
   const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
-  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
+  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 }); // ✅ added
 
   const arType = "google";
 
   useEffect(() => {
     // Replace with your model URL
-    setModelUrl("https://modelviewer.dev/shared-assets/models/Astronaut.glb");
+    const url ="https://modelviewer.dev/shared-assets/models/Astronaut.glb";
+    setModelUrl(getArViewerUrl(url, "google"));
   }, []);
 
   useEffect(() => {
@@ -94,77 +98,96 @@ const PreviewViewer = () => {
   const handleClickAway = () => setColorPickerOpen(false);
   const handleColorChange = (e) => setColor(e.target.value);
 
+  useEffect(() => {
+  const saved = localStorage.getItem('canvasBgColor');
+  if (saved) setBgColor(saved);
+}, []);
+
+useEffect(() => {
+  localStorage.setItem('canvasBgColor', bgColor);
+}, [bgColor]);
+
   const qrCodeValue = shortUrl || modelUrl;
 
   return (
     <div>
       <div className="preview-viewer-container" style={{ marginBottom: 10 }}>
-        <Button variant="contained"  sx={{
-                      width: 47,
-                      height: 47,
-                      borderRadius: '20%',
-                      padding: 0,
-                      minWidth: 0,         // Prevents default min width
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      '& .MuiButton-startIcon': {
-                        margin: 0, // remove default left margin
-                      },
-                    }}   style={{ backgroundColor: color }}       onClick={() => setPosition((p) => ({ ...p, x: p.x + 1 }))}    >
-                  <img src="/icons/arrows.svg" alt="move icon" width={24} height={24} />
-                </Button>
+        <Button
+          variant="contained"
+          sx={{
+            width: 47,
+            height: 47,
+            borderRadius: '20%',
+            padding: 0,
+            minWidth: 0,         // Prevents default min width
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            '& .MuiButton-startIcon': {
+              margin: 0, // remove default left margin
+            },
+          }}   style={{ backgroundColor: "#eee" }}       
+          onClick={() => setPosition((p) => ({ ...p, x: p.x + 1 }))}    >
+          <img src="/icons/arrows.svg" alt="move icon" width={24} height={24} />
+        </Button>
 
-        <Button variant="contained" sx={{
-                      width: 47,
-                      height: 47,
-                      borderRadius: '20%',
-                      padding: 0,
-                      minWidth: 0,         // Prevents default min width
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      '& .MuiButton-startIcon': {
-                        margin: 0, // remove default left margin
-                      },
-                    }}  style={{ backgroundColor: color }}       onClick={() => setScale((s) => Math.max(s - 0.1, 0.3))}>
-                  <img src="/icons/zoom-out.svg" alt="zoom out icon" width={24} height={24} />
-                </Button>
+        <Button
+          variant="contained"
+          sx={{
+            width: 47,
+            height: 47,
+            borderRadius: '20%',
+            padding: 0,
+            minWidth: 0,         // Prevents default min width
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            '& .MuiButton-startIcon': {
+              margin: 0, // remove default left margin
+            },
+          }}  style={{ backgroundColor: "#eee" }}       
+          onClick={() => setScale((s) => Math.max(s - 0.1, 0.3))}>
+          <img src="/icons/zoom-out.svg" alt="zoom out icon" width={24} height={24} />
+        </Button>
 
-        <Button variant="contained"  sx={{
-                    
-                      width: 47,
-                      height: 47,
-                      borderRadius: '20%',
-                      padding: 0,
-                      minWidth: 0,         // Prevents default min width
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      '& .MuiButton-startIcon': {
-                        margin: 0, // remove default left margin
-                      },
-                    }}   style={{ backgroundColor: color }}      onClick={() => setScale((s) => Math.min(s + 0.1, 3))}>
-                  <img src="/icons/zoom-in.svg" alt="zoom in icon" width={24} height={24} />
-                </Button>
+        <Button
+          variant="contained"
+          sx={{
+            width: 47,
+            height: 47,
+            borderRadius: '20%',
+            padding: 0,
+            minWidth: 0,         // Prevents default min width
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            '& .MuiButton-startIcon': {
+              margin: 0, // remove default left margin
+            },
+          }}   style={{ backgroundColor: "#eee" }}      onClick={() => setScale((s) => Math.min(s + 0.1, 3))}>
+          <img src="/icons/zoom-in.svg" alt="zoom in icon" width={24} height={24} />
+        </Button>
 
         {/* Color picker button */}
-        <Button variant="contained"  sx={{
-                      width: 47,
-                      height: 47,
-                      borderRadius: '20%',
-                      padding: 0,
-                      minWidth: 0,         // Prevents default min width
-                     display: 'flex',
-                     justifyContent: 'center',
-                     alignItems: 'center',
-                      '& .MuiButton-startIcon': {
-                      margin: 0, // remove default left margin
-                    },
-                    }}      style={{ backgroundColor: color }}>
-                  <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ opacity: 0, position: "absolute" }} />
-                  <img src="/icons/color-wheel.png" alt="Color" width={24} height={24} />
-                </Button>
+        <Button
+          variant="contained"
+          sx={{
+            width: 47,
+            height: 47,
+            borderRadius: '20%',
+            padding: 0,
+            minWidth: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            '& .MuiButton-startIcon': { margin: 0 },
+          }}
+          style={{ backgroundColor: "#eee" }}
+          ref={colorPickerAnchorRef}
+          onClick={() => setColorPickerOpen(true)}
+        >
+          <img src="/icons/color-wheel.png" alt="Color" width={24} height={24} />
+        </Button>
       </div>
 
       <Popover
@@ -174,18 +197,20 @@ const PreviewViewer = () => {
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
         transformOrigin={{ vertical: "top", horizontal: "left" }}
       >
-        <ClickAwayListener onClickAway={handleClickAway}>
+        <ClickAwayListener onClickAway={() => setColorPickerOpen(false)}>
           <input
             type="color"
-            value={color}
-            onChange={handleColorChange}
+            value={bgColor}
+            onChange={(e) => setBgColor(e.target.value)}
             style={{
               width: 40,
               height: 40,
               border: "none",
               cursor: "pointer",
               borderRadius: 5,
+              display: "block"
             }}
+            autoFocus
           />
         </ClickAwayListener>
       </Popover>
@@ -214,7 +239,7 @@ const PreviewViewer = () => {
       
 
       <div style={{ position: "absolute", top: 40, right: 30, zIndex: 10 }}>
-        <Button  style={{ backgroundColor: color, }} sx={{color:'black', fontWeight:'bold'}}
+        <Button  style={{ backgroundColor: "#eee", }} sx={{color:'black', fontWeight:'bold'}}
           className="ARbutton"
           variant="contained"
           startIcon={<img className="Aricon-icon" src="/icons/Aricon.svg" alt="AR icon" />}
@@ -272,7 +297,7 @@ const PreviewViewer = () => {
         {models.slice(0, 3).map((model, i) => (
           <IconButton
             key={model.id}
-            style={{ backgroundColor: color, flexDirection: "column" }}
+            style={{ backgroundColor: "#eee", flexDirection: "column" }}
             onClick={() => {
               const newRotation = {
                 x: (model.rotation.x || 0) * Math.PI / 180,

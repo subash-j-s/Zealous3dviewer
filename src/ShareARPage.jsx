@@ -145,13 +145,13 @@ const ShareARPage = () => {
           <img src="/Zealous Logo.svg" alt="Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
         </div>
 
-        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: color }}>
+        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee" }}>
           <img src="/icons/arrows.svg" alt="move icon" width={24} height={24} />
         </Button>
-        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: color }} onClick={() => setScale((s) => Math.max(s - 0.1, 0.3))}>
+        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee" }} onClick={() => setScale((s) => Math.max(s - 0.1, 0.3))}>
           <img src="/icons/zoom-out.svg" alt="zoom out icon" width={24} height={24} />
         </Button>
-        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: color }} onClick={() => setScale((s) => Math.min(s + 0.1, 3))}>
+        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee" }} onClick={() => setScale((s) => Math.min(s + 0.1, 3))}>
           <img src="/icons/zoom-in.svg" alt="zoom in icon" width={24} height={24} />
         </Button>
       </div>
@@ -176,7 +176,7 @@ const ShareARPage = () => {
           ].map((view, i) => (
             <IconButton
               key={i}
-              style={{ backgroundColor: color }}
+              style={{ backgroundColor: "#eee" }}
               onClick={() => {
                 setRotation(view.rotation);
                 setPosition(view.position);
@@ -192,7 +192,7 @@ const ShareARPage = () => {
         <Button
           variant="contained"
           startIcon={<img className="Aricon-icon" src="/icons/Aricon.svg" alt="AR" />}
-          style={{ backgroundColor: color }}
+          style={{ backgroundColor: "#eee" }}
           sx={{ color: 'black', fontWeight: 'bold' }}
           onClick={openARView}
         >

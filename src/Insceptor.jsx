@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { IconButton, Switch, Slider, ToggleButton, ToggleButtonGroup, Collapse, Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { useState, useEffect, useRef } from 'react';
+import { IconButton, Switch, Slider, ToggleButton, ToggleButtonGroup, Collapse, Button } from '@mui/material';
 import Box from "@mui/joy/Box";
 import Typography from "@mui/joy/Typography";
 import Select from "@mui/joy/Select";
@@ -12,8 +12,38 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Input } from '@mui/joy';
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
-import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
+import {
+  EffectComposer,
+  Bloom,
+  Vignette,
+  SSAO,
+  DepthOfField,
+  Noise,
+  HueSaturation,
+  ChromaticAberration,
+  ToneMapping,
+  BrightnessContrast,
+  SMAA
+} from '@react-three/postprocessing';
 import * as THREE from 'three';
+
+// RenderEffects Component
+const RenderEffects = ({ effects }) => {
+  return (
+    <EffectComposer>
+      {effects.bloom && <Bloom intensity={effects.bloom.intensity ?? 1} luminanceThreshold={effects.bloom.threshold ?? 0.2} luminanceSmoothing={effects.bloom.smoothing ?? 0.025}  />}
+      {effects.vignette && <Vignette eskil={false} offset={0.1} darkness={1.1} />}
+      {/* {effects.ambientOcclusion && <SSAO intensity={10} radius={0.05} luminanceInfluence={0.6} />} */}
+      {/* {effects.fading && <DepthOfField focusDistance={0.03} focalLength={0.02} bokehScale={1.5} />} */}
+      {effects.smoothEdges && <SMAA />}
+      {effects.adjustments && <BrightnessContrast brightness={0.05} contrast={0.15} />}
+      {effects.grain && <Noise opacity={0.2} />}
+      {effects.colorBalance && <HueSaturation hue={0} saturation={0.2} />}
+      {effects.softShadows && <ToneMapping mode={3} />}
+      {effects.reflections && <ChromaticAberration offset={[0.001, 0.001]} />}
+    </EffectComposer>
+  );
+};
 
 const Inspector = ({
   selectedModel,
@@ -29,8 +59,10 @@ const Inspector = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [transformOpen, setTransformOpen] = useState(false);
   const [selectedSkybox, setSelectedSkybox] = useState("city");
-  const [effects, setEffects] = useState({ bloom: false, vignette: false });
-  const [effectsOpen, setEffectsOpen] = useState(false); // Add this to your Inspector state
+  const [effects, setEffects] = useState(
+    { bloom: false, vignette: false, ambientOcclusion: false, fading: false, smoothEdges: false, adjustments: false, grain: false, 
+      colorBalance: false, softShadows: false, reflections: false });
+  const [effectsOpen, setEffectsOpen] = useState(false); 
   const [skyboxFading, setSkyboxFading] = useState(false);
   const [pendingSkybox, setPendingSkybox] = useState(null);
 
@@ -127,6 +159,7 @@ const Inspector = ({
     }, 400); // 400ms fade
   };
 
+ 
   return (
     <Box sx={{ width: 230, bgcolor: "background.level1", p: 2, height: "100vh", overflowY: "auto", borderLeft: "5px solid", borderColor: "divider", boxShadow: "sm" }}>
       <Box onClick={() => setSettingsOpen(!settingsOpen)} sx={{ cursor: 'pointer', mt: 1, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -141,38 +174,39 @@ const Inspector = ({
           <PreviewButton setShowPreview={setShowPreview} />
           <GridSetting setShowGrid={setShowGrid} showGrid={showGrid} />
 
-          {/* Move EffectsDropdown here */}
-          <Box onClick={() => setEffectsOpen(!effectsOpen)} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', 
-            justifyContent: 'space-between', ml: -0.6, mb: 1, borderRadius: 2, bgcolor: 'background.level1',ml: -0.9 }}>
+       {/* Effects Section */}
+          <Box onClick={() => setEffectsOpen(!effectsOpen)} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',  
+            borderRadius: 2, bgcolor: 'background.level1', ml: -0.9,mb:1,  }}>
             <Typography level="subtitle1" sx={{ fontSize: '12px' }}>Effects</Typography>
             {effectsOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </Box>
           <Collapse in={effectsOpen} timeout="auto" unmountOnExit>
-            <EffectsDropdown effects={effects} setEffects={setEffects} />
+            <Box sx={{ border: '1px solid #ccc', borderRadius: 5, p: 0.5, ml: -0.9, bgcolor: 'background.level1' }}>
+              <EffectsDropdown effects={effects} setEffects={setEffects} />
+            </Box>
           </Collapse>
+          
 
+          {/* Camera Section */}
           <Box onClick={() => setTransformOpen(!transformOpen)} sx={{ cursor: 'pointer',  display: 'flex', alignItems: 'center', 
-            justifyContent: 'space-between',ml: -0.6, mb: 1,  borderRadius: 2, bgcolor: 'background.level1',ml: -0.9 }}>
+            justifyContent: 'space-between', mb: 1,  borderRadius: 5, bgcolor: 'background.level1',ml: -0.9 }}>
             <Typography level="subtitle1" sx={{ fontSize: '12px',  }}>Camera</Typography>
             {transformOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </Box>
 
           <Collapse in={transformOpen} timeout="auto" unmountOnExit>
-            <Box sx={{ border: '1px solid #ccc', borderRadius: 2, p: 1 }}>
-              {/* Sensitivity option moved here */}
-              <Box>
-                <Typography level="subtitle1" sx={{ fontSize: '12px', mb: 0.5, }}>Sensitivity</Typography>
+            <Box sx={{ border: '1px solid #ccc', borderRadius: 5, p: 1,ml:-0.9, }}>
+              {/* Sensitivity and Axis Toggles in Single Row */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography level="subtitle1" sx={{ fontSize: '12px', mb: 0.5 }}>Sensitivity</Typography>
                 <ToggleButtonGroup
                   value={sensitivity}
                   exclusive
                   onChange={(e, val) => val && setSensitivity(val)}
                   size="small"
-                  fullWidth
                   sx={{
-                    gap: 0.5,
                     borderRadius: 2,
                     bgcolor: 'background.level1',
-                    display: 'flex',
                     padding: '2px',
                     fontFamily: 'Inter, sans-serif',
                   }}
@@ -204,9 +238,22 @@ const Inspector = ({
                 </ToggleButtonGroup>
               </Box>
 
+              {/* Position Controls */}
               {['x', 'y', 'z'].map((axis) => (
                 <Box key={`pos-${axis}`} sx={{ mt: 1 }}>
-                  <Typography sx={{ fontSize: '11px' }}>Pos {axis.toUpperCase()}:</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', }}>
+                    <Typography sx={{ fontSize: '11px' }}>Pos {axis.toUpperCase()}:</Typography>
+                    <Input
+                      type="number"
+                      size="sm"
+                      value={livePosition[axis]}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) handlePositionChange(axis, val);
+                      }}
+                      sx={{ width: 100, fontFamily: 'Inter, sans-serif', fontSize: '12px', }}
+                    />
+                  </Box>
                   <Slider
                     size="small"
                     value={livePosition[axis]}
@@ -215,22 +262,25 @@ const Inspector = ({
                     max={10}
                     step={stepValue}
                   />
-                  <Input
-                    type="number"
-                    size="sm"
-                    value={livePosition[axis]}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) handlePositionChange(axis, val);
-                    }}
-                    sx={{ width: '100%', mt: 0.5,fontFamily: 'Inter, sans-serif', fontSize: '12px' }}
-                  />
                 </Box>
               ))}
 
+              {/* Rotation Controls */}
               {['x', 'y', 'z'].map((axis) => (
                 <Box key={`rot-${axis}`} sx={{ mt: 1 }}>
-                  <Typography sx={{ fontSize: '11px' }}>Rot {axis.toUpperCase()} (°):</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Typography sx={{ fontSize: '11px' }}>Rot {axis.toUpperCase()} (°):</Typography>
+                    <Input
+                      type="number"
+                      size="sm"
+                      value={liveRotation[axis]}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (!isNaN(val)) handleRotationChange(axis, val);
+                      }}
+                      sx={{ width: 100, fontSize: '12px' }}
+                    />
+                  </Box>
                   <Slider
                     size="small"
                     value={liveRotation[axis]}
@@ -239,70 +289,25 @@ const Inspector = ({
                     max={180}
                     step={rotStep}
                   />
-                  <Input
-                    type="number"
-                    size="sm"
-                    value={liveRotation[axis]}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      if (!isNaN(val)) handleRotationChange(axis, val);
-                    }}
-                    sx={{ width: '100%', mt: 0.5 }}
-                  />
                 </Box>
               ))}
 
-              {/* Save buttons in a single row */}
-              <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'center',fontFamily: 'Inter, sans-serif', fontSize: '12px' }}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="success"
-                  onClick={() => saveTransform(1)}
-                  sx={{
-                    fontSize: '9px',
-                    minWidth: 28,
-                    minHeight: 18,
-                    px: 1,
-                    py: 0.2,
-                    borderRadius: 2
-                  }}
-                >
+              {/* Save Buttons Row */}
+              <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontSize: '12px' }}>
+                <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(1)}
+                  sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
                   1
                 </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="success"
-                  onClick={() => saveTransform(2)}
-                  sx={{
-                    fontSize: '9px',
-                    minWidth: 28,
-                    minHeight: 18,
-                    px: 1,
-                    py: 0.2,
-                    borderRadius: 2,fontFamily: 'Inter, sans-serif', 
-                  }}
-                >
+                <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(2)}
+                  sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
                   2
                 </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="success"
-                  onClick={() => saveTransform(3)}
-                  sx={{
-                    fontSize: '9px',
-                    minWidth: 28,
-                    minHeight: 18,
-                    px: 1,
-                    py: 0.2,
-                    borderRadius: 2
-                  }}
-                >
+                <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(3)}
+                  sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
                   3
                 </Button>
               </Box>
+
 
               {/* Recall buttons in a single row */}
             <Box sx={{ display: 'flex', gap: 0.5, mt: 1, justifyContent: 'center' }}>
@@ -322,57 +327,15 @@ const Inspector = ({
               >
                 Default
               </Button> */}
-              <Button
-                size="small"
-                variant={savedTransforms[1] ? "contained" : "outlined"}
-                color={savedTransforms[1] ? "primary" : "inherit"}
-                disabled={!savedTransforms[1]}
-                onClick={() => recallTransform(1)}
-                sx={{
-                  fontSize: '8px',
-                  minWidth: 22,
-                  minHeight: 14,
-                  px: 0.5,
-                  py: 0.1,
-                  borderRadius: 2
-                }}
-              >
-                1
-              </Button>
-              <Button
-                size="small"
-                variant={savedTransforms[2] ? "contained" : "outlined"}
-                color={savedTransforms[2] ? "primary" : "inherit"}
-                disabled={!savedTransforms[2]}
-                onClick={() => recallTransform(2)}
-                sx={{
-                  fontSize: '8px',
-                  minWidth: 22,
-                  minHeight: 14,
-                  px: 0.5,
-                  py: 0.1,
-                  borderRadius: 2
-                }}
-              >
-                2
-              </Button>
-              <Button
-                size="small"
-                variant={savedTransforms[3] ? "contained" : "outlined"}
-                color={savedTransforms[3] ? "primary" : "inherit"}
-                disabled={!savedTransforms[3]}
-                onClick={() => recallTransform(3)}
-                sx={{
-                  fontSize: '8px',
-                  minWidth: 22,
-                  minHeight: 14,
-                  px: 0.5,
-                  py: 0.1,
-                  borderRadius: 2
-                }}
-              >
-                3
-              </Button>
+              <Button size="small"  variant={savedTransforms[1] ? "contained" : "outlined"} color={savedTransforms[1] ? "primary" : "inherit"}
+                disabled={!savedTransforms[1]}  onClick={() => recallTransform(1)}
+                sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  1 </Button>
+              <Button size="small"  variant={savedTransforms[2] ? "contained" : "outlined"} color={savedTransforms[2] ? "primary" : "inherit"}
+                disabled={!savedTransforms[2]} onClick={() => recallTransform(2)}
+                sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  2 </Button>
+              <Button size="small"  variant={savedTransforms[3] ? "contained" : "outlined"} color={savedTransforms[3] ? "primary" : "inherit"}
+                disabled={!savedTransforms[3]}  onClick={() => recallTransform(3)}
+                sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  3 </Button>
             </Box>
             </Box>
           </Collapse>
@@ -381,7 +344,6 @@ const Inspector = ({
 
       {/* 3D Model Canvas */}
       <Canvas style={{ height: '400px', width: '100%', borderRadius: '8px', marginTop: '16px' }}>
-        {/* ...other components... */}
         <Environment preset={selectedSkybox} background={false} />
         {(effects.bloom || effects.vignette) && (
           <EffectComposer>
@@ -389,26 +351,13 @@ const Inspector = ({
             {effects.vignette && <Vignette eskil={false} offset={0.1} darkness={1.1} />}
           </EffectComposer>
         )}
-        {/* ...other components... */}
       </Canvas>
 
       {skyboxFading && (
-  <Box
-    sx={{
-      position: 'absolute',
-      inset: 0,
-      bgcolor: 'background.paper',
-      opacity: 0.7,
-      zIndex: 9999,
-      pointerEvents: 'none',
-      transition: 'opacity 0.4s',
-      animation: 'fadeInOut 0.4s linear'
-    }}
-  />
-)}
-    </Box>
-  );
-};
+                <Box sx={{ position: 'absolute', inset: 0, bgcolor: 'background.paper', opacity: 0.7,  zIndex: 9999,
+                    pointerEvents: 'none',  transition: 'opacity 0.4s',  animation: 'fadeInOut 0.4s linear' }}/> )}  </Box>
+                );
+              };
 
 const BackgroundSetting = ({ setModelSettings }) => {
   const defaultColor = "#EBEBEB";
@@ -455,7 +404,7 @@ const BackgroundSetting = ({ setModelSettings }) => {
 const SkyboxSetting = ({ onSkyboxChange, selectedSkybox }) => {
   const skyboxOptions = ["apartment", "city", "dawn", "forest", "lobby", "night", "park", "studio", "sunset", "warehouse"];
   return (
-    <Box sx={{ width: 193, display: 'flex', gap: 4, alignItems: 'center', marginLeft: -0.6, borderRadius: 5, marginLeft: -0.9 }}>
+    <Box sx={{ width: 193, display: 'flex', gap: 4, alignItems: 'center', marginLeft: -0.9, borderRadius: 5, }}>
       <Typography level="subtitle1" sx={{ fontSize: '12px', color: 'primary.main', fontFamily: "Inter, sans-serif" }}>Skybox</Typography>
       <Select value={selectedSkybox} onChange={(e, v) => onSkyboxChange(v)} size="sm" sx={{ width: "100%", minWidth: 20, minHeight: 20 }}>
         {skyboxOptions.map((option) => (
@@ -467,11 +416,11 @@ const SkyboxSetting = ({ onSkyboxChange, selectedSkybox }) => {
 };
 
 const PreviewButton = ({ setShowPreview }) => (
-  <Box sx={{ marginLeft: -0.5, borderRadius: 5, mt: 0.5, gap: 8, width: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center',marginLeft: -0.9 }}>
+  <Box sx={{ marginLeft: -0.9, borderRadius: 5, mt: 0.5, gap: 7, width: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center',}}>
     <Typography level="subtitle1" sx={{ fontSize: '12px', fontFamily: "Inter, sans-serif", color: 'primary.main' }}>Preview</Typography>
     <IconButton
       onClick={() => setShowPreview(true)}
-      sx={{ p: 0.15, border: '1px solid grey', borderRadius: 2, transition: 'all 0.3s ease', color: 'black', '&:hover': { backgroundColor: 'black', color: 'white' } }}
+      sx={{ p: 0.1, border: '1px solid grey', borderRadius: 2, transition: 'all 0.3s ease', color: 'black', '&:hover': { backgroundColor: 'black', color: 'white' } }}
     >
       <RemoveRedEyeIcon fontSize="small" />
     </IconButton>
@@ -479,7 +428,7 @@ const PreviewButton = ({ setShowPreview }) => (
 );
 
 const GridSetting = ({ showGrid, setShowGrid }) => (
-  <Box sx={{ width: 180, marginLeft: -0.6, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginLeft: -0.9 }}>
+  <Box sx={{ width: 195,  display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginLeft: -0.9, }}>
     <Typography level="subtitle1" sx={{ fontSize: '12px', fontFamily: 'Inter, sans-serif', color: 'primary.main' }}>Grid</Typography>
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
       {showGrid ? <GridOnIcon sx={{ color: '#1976d2' }} /> : <GridOffIcon sx={{ color: '#aaa' }} />}
@@ -488,72 +437,88 @@ const GridSetting = ({ showGrid, setShowGrid }) => (
   </Box>
 );
 
-function EffectsDropdown({ effect, setEffect }) {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
+function EffectsDropdown({ effects, setEffects }) {
+  const [expanded, setExpanded] = useState({ bloom: false, ambientOcclusion: false, fading: false, smoothEdges: false, adjustments: false, 
+                                                grain: false, colorBalance: false, softShadows: false, reflections: false });
+
+  const toggleExpand = (key) => {
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const updateEffectParam = (key, param, value) => {
+    setEffects((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [param]: value,
+      },
+    }));
+  };
+
+  const defaultParams = {
+    bloom: { intensity: 1, threshold: 0.2, smoothing: 0.025 },
+    ambientOcclusion: { intensity: 1, radius: 0.05, luminanceInfluence: 0.6 },
+    fading: { focusDistance: 0.03, focalLength: 0.02, bokehScale: 1.5 },
+    smoothEdges: { intensity: 1, radius: 0.05, luminanceInfluence: 0.6 },
+    adjustments: { brightness: 0.05, contrast: 0.15 },
+    grain: { opacity: 0.2 },
+    colorBalance: { hue: 0, saturation: 0.2 },
+    softShadows: { mode: 3 },
+    reflections: { offset: [0.001, 0.001] },
+  };
+
+  const renderSliders = (key, params) => {
+    return Object.entries(params).map(([param, defaultVal]) => (
+      <Box key={`${key}-${param}`} sx={{ mt: 1 }}>
+        <Typography sx={{ fontSize: '12px' }}>{param.charAt(0).toUpperCase() + param.slice(1)}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Slider
+            size="small"
+            min={0}
+            max={param.includes('mode') ? 10 : 5}
+            step={0.01}
+            value={effects[key]?.[param] ?? defaultVal}
+            onChange={(_, value) => updateEffectParam(key, param, value)}
+            sx={{ flexGrow: 1 }}
+          />
+          <Input
+            type="number"
+            value={effects[key]?.[param] ?? defaultVal}
+            onChange={(e) => updateEffectParam(key, param, parseFloat(e.target.value))}
+            size="sm"
+            sx={{ width: 60 }}
+          />
+        </Box>
+      </Box>
+    ));
+  };
+
+  const effectKeys = Object.keys(defaultParams);
 
   return (
-    <Box sx={{ mb: 1 }}>
-      <Box
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={{
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 5,
-          px: 1,
-          py: 0.5,
-          width: '100%',
-          cursor: 'pointer',
-          backgroundColor: 'background.paper',
-          display: 'flex',
-          alignItems: 'center',
-          boxShadow: 'sm',
-          justifyContent: 'space-between',
-          '&:hover': {
-            backgroundColor: 'action.hover',
-          },
-        }}
-      >
-        <Typography
-          sx={{
-            fontSize: '12px',
-            fontFamily: 'Inter, sans-serif',
-            color: 'text.primary',
-          }}
-        >
-          {effect ? `Effect: ${effect}` : 'Select Effect'}
-        </Typography>
-        <ExpandMoreIcon fontSize="small" />
-      </Box>
-
-      <Menu
-        anchorEl={anchorEl}
-        open={open}
-        onClose={() => setAnchorEl(null)}
-        MenuListProps={{
-          sx: { fontSize: '12px' },
-        }}
-      >
-        {[
-          'ambientOcclusion',  'fading',  'smoothEdges',  'adjustments', 'vignette',  'grain',  'colorBalance',  'bloom',  'softShadows',  'reflections',
-        ].map((key) => (
-          <MenuItem
-            key={key}
-            onClick={() => {
-              setEffect(key);
-              setAnchorEl(null);
-            }}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.1, fontFamily: 'Inter, sans-serif', fontSize: '12px' }}>
+      {effectKeys.map((key) => (
+        <Box key={key} sx={{ borderRadius: 2, p: 0.4, }}>
+          <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+            onClick={() => toggleExpand(key)}
           >
-            <ListItemText
-              primary={key.charAt(0).toUpperCase() + key.slice(1)}
-              primaryTypographyProps={{ fontSize: '12px' }}
-            />
-          </MenuItem>
-        ))}
-      </Menu>
+            <Typography sx={{ fontSize: '13px' }}>{key.charAt(0).toUpperCase() + key.slice(1)}</Typography>
+            {expanded[key] ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+          </Box>
+
+          {expanded[key] && (
+            <Box sx={{ mt: 1, pl: 1 }}>
+              {renderSliders(key, defaultParams[key])}
+            </Box>
+          )}
+        </Box>
+      ))}
     </Box>
   );
 }
+
+
 
 
 

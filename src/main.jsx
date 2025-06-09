@@ -5,7 +5,7 @@ import "./index.css";
 import App from "./App.jsx";
 import SharePage from "./SharePage.jsx";
 import Login from "./Login.jsx";
-import ShareARPage from "./ShareARPage.jsx"; // Add this import
+import ShareARPage from "./ShareARPage.jsx";
 
 const Main = () => {
   const [authenticated, setAuthenticated] = useState(false);
