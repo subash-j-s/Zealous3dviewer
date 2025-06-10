@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { storage } from "./firebase";
 import { ref, getDownloadURL } from "firebase/storage";
 import { Canvas } from "@react-three/fiber";
@@ -7,10 +7,14 @@ import { OrbitControls, Environment,Center, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { Button, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
+import { ContentCopy } from "@mui/icons-material";
 import { useTransformRecall } from "./TransformRecallContext";
 
-const ShareARPage = () => {
-  const { projectName } = useParams();
+const ShareARPage = (props) => {
+  // Accept projectName from either /share-ar/:projectName or /embedded/:projectName
+  const params = useParams();
+  const projectName = params.projectName || props.projectName;
+
   const [modelUrl, setModelUrl] = useState(null);
   const [usdzUrl, setUsdzUrl] = useState(null);
   const [skybox, setSkybox] = useState("studio");
@@ -26,17 +30,23 @@ const ShareARPage = () => {
   const [modelLoading, setModelLoading] = useState(false);
   const [modelCenter, setModelCenter] = useState(null);
   const [modelSize, setModelSize] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
   const { presets } = useTransformRecall();
+  const [showInitialLoader, setShowInitialLoader] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     const loadARData = async () => {
       setLoading(true);
+      setErrorMsg("");
       try {
         const jsonRef = ref(storage, `projects/${projectName}/share-ar-data.json`);
         const jsonUrl = await getDownloadURL(jsonRef);
         const response = await fetch(jsonUrl);
         if (!response.ok) throw new Error(`Failed to fetch AR data: ${response.statusText}`);
         const data = await response.json();
+        if (!data.modelUrl) throw new Error("No modelUrl found in AR data.");
         setModelUrl(data.modelUrl);
         setUsdzUrl(data.usdzUrl);
         setSkybox(data.skybox || "studio");
@@ -45,6 +55,11 @@ const ShareARPage = () => {
         console.error("Error loading AR data:", error);
         setModelUrl("");
         setUsdzUrl("");
+        setErrorMsg(
+          error.message.includes("storage/object-not-found")
+            ? "This shared model does not exist or has been deleted."
+            : `Failed to load model: ${error.message}`
+        );
       } finally {
         setLoading(false);
       }
@@ -56,6 +71,15 @@ const ShareARPage = () => {
   useEffect(() => {
     if (modelUrl) useGLTF.preload(modelUrl);
   }, [modelUrl]);
+
+  useEffect(() => {
+    // Hide loader as soon as both loading and modelLoading are false
+    if (!loading && !modelLoading) {
+      setShowInitialLoader(false);
+    } else {
+      setShowInitialLoader(true);
+    }
+  }, [loading, modelLoading]);
 
   const openARView = () => {
     if (!modelUrl) {
@@ -79,31 +103,91 @@ const ShareARPage = () => {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  // Generate embeddable iframe link for this model view
+  const currentUrl = window.location.origin + "/embedded/" + projectName;
+  const iframeCode = `<iframe src=\"${currentUrl}\" frameborder=\"0\" width=\"100%\" height=\"900\" allow=\"xr-spatial-tracking; fullscreen;\"></iframe>`;
+
+  // if (loading) return <div>Loading...</div>;
 
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
-      {modelLoading && (
-        <div className="loading-overlay" style={{
+      {/* Error Message UI */}
+      {errorMsg && (
+        <div style={{
           position: 'fixed',
           top: 0,
           left: 0,
           width: '100vw',
           height: '100vh',
-          background: 'rgba(255,255,255,0.85)',
-          zIndex: 2000,
+          background: 'rgba(255,255,255,0.97)',
+          zIndex: 4000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#b00',
+          fontWeight: 700,
+          fontSize: 24,
+          letterSpacing: 1,
+          textAlign: 'center',
+          padding: 32,
+        }}>
+          <img src="/icons/cross.png" alt="Error" style={{ width: 60, height: 60, marginBottom: 24 }} />
+          <div>{errorMsg}</div>
+          <div style={{ fontSize: 16, color: '#555', marginTop: 16 }}>
+            Please check your link or contact the model owner.
+          </div>
+        </div>
+      )}
+
+      {/* Initial Loader Overlay - always visible until model is ready */}
+      {showInitialLoader && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(255,255,255,0.95)',
+          zIndex: 3000,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <img src="/icons/move2.png" alt="Loading Icon" style={{ width: 70, height: 70, marginBottom: 24, animation: 'spin 1.2s linear infinite' }} />
+          <img src="/icons/move2.png" alt="Loading Icon" style={{ width: 80, height: 80, marginBottom: 24, animation: 'spin 1.2s linear infinite' }} />
           <div style={{ marginTop: 10, fontWeight: 700, fontSize: 28, color: '#222', letterSpacing: 2, textShadow: '0 2px 8px #fff' }}>
-            Loading...
+            {loading ? 'Webpage is loading...' : '3D Model is loading...'}
+          </div>
+          <div style={{ marginTop: 8, fontWeight: 400, fontSize: 18, color: '#444', letterSpacing: 1 }}>
+            {loading
+              ? 'Please wait while the webpage loads.'
+              : 'Please wait while your 3D model loads.'}
           </div>
           <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
         </div>
       )}
+
+      {/* Share Button Centered Above Model */}
+      <div style={{
+        position: "fixed",
+        top: 30,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1200,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        <Button
+          variant="contained"
+          startIcon={<img src="/icons/share.png" alt="Share" style={{ width: 22, height: 22 }} />}
+          sx={{ color: 'black', fontWeight: 'bold', background: '#eee', boxShadow: 2, borderRadius: 2, px: 2 }}
+          onClick={() => setShareOpen(true)}
+        >
+          Share
+        </Button>
+      </div>
 
       <Canvas
         camera={{ position: [0, 1, 10], fov: 45 }}
@@ -154,7 +238,7 @@ const ShareARPage = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          // backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderRadius: 8,
           boxShadow: '0 0 10px rgba(0,0,0,0.1)',
           padding: '4px 8px',
@@ -194,9 +278,9 @@ const ShareARPage = () => {
                 const preset = presets[index];
                 if (preset) {
                   setRotation({
-                    x: preset.rotation.x * Math.PI / 180,
-                    y: preset.rotation.y * Math.PI / 180,
-                    z: preset.rotation.z * Math.PI / 180,
+                    x: (preset.rotation.x || 0) * Math.PI / 180,
+                    y: (preset.rotation.y || 0) * Math.PI / 180,
+                    z: (preset.rotation.z || 0) * Math.PI / 180,
                   });
                   setPosition({
                     x: preset.position.x,
@@ -205,6 +289,7 @@ const ShareARPage = () => {
                   });
                 }
               }}
+              title={["Front","Side","Back"][i]}
             >
               <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
             </IconButton>
@@ -229,6 +314,100 @@ const ShareARPage = () => {
         <DialogContent style={{ textAlign: "center" }}>
           <QRCodeCanvas value={modelUrl} size={250} />
           <p>Scan to view the model in AR.</p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={shareOpen} onClose={() => { setShareOpen(false); setCopySuccess(false); }}>
+        <DialogContent style={{ textAlign: "center", minWidth: 350 }}>
+          <div style={{ marginBottom: 12, fontSize: 24, fontWeight: 'bold', }}>
+            Share this model:
+          </div>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 12, 
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+            {/* Share Embed Link Button Only */}
+            <Button
+              variant="contained"
+              size="small"
+              sx={{
+                fontSize: 13,
+                textTransform: 'none',
+                minWidth: 120,
+                px: 2,
+                py: 1,
+                background: '#fff',
+                color: '#111',
+                fontWeight: 'bold',
+                boxShadow: '#eee',
+                '&:hover': {
+                  background: '#f5f5f5',
+                  color: '#111',
+                  borderColor: '#222',
+                },
+              }}
+              onClick={() => {
+                navigator.clipboard.writeText(currentUrl);
+                setCopySuccess('link');
+                setTimeout(() => setCopySuccess(false), 1500);
+              }}
+            >
+              Share Embed Link
+            </Button>
+            {copySuccess === 'link' && (
+              <span style={{ color: 'green', fontSize: 13, marginLeft: 6 }}>Copied!</span>
+            )}
+            {/* Iframe Embed Button Only */}
+            <Button
+              variant="contained"
+              size="small"
+              sx={{
+                fontSize: 13,
+                textTransform: 'none',
+                minWidth: 120,
+                px: 2,
+                py: 1,
+                background: '#fff',
+                color: '#111',
+                fontWeight: 'bold',
+                boxShadow: '#eee',
+                '&:hover': {
+                  background: '#f5f5f5',
+                  color: '#111',
+                  borderColor: '#222',
+                },
+              }}
+              onClick={async () => {
+                try {
+                  if (window.navigator && window.navigator.clipboard) {
+                    await window.navigator.clipboard.writeText(iframeCode);
+                    setCopySuccess('iframe');
+                    setTimeout(() => setCopySuccess(false), 1500);
+                  } else {
+                    // fallback for older browsers
+                    const textarea = document.createElement('textarea');
+                    textarea.value = iframeCode;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    setCopySuccess('iframe');
+                    setTimeout(() => setCopySuccess(false), 1500);
+                  }
+                } catch (err) {
+                  alert('Failed to copy iframe code.');
+                }
+              }}
+            >
+              Embed Iframe Code
+            </Button>
+            {copySuccess === 'iframe' && (
+              <span style={{ color: 'green', fontSize: 13, marginLeft: 6 }}>Copied!</span>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
