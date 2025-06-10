@@ -32,7 +32,7 @@ const ShareARPage = (props) => {
   const [modelSize, setModelSize] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  const { presets } = useTransformRecall();
+  const { presets, setProjectName, presetsLoading } = useTransformRecall();
   const [showInitialLoader, setShowInitialLoader] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -80,6 +80,10 @@ const ShareARPage = (props) => {
       setShowInitialLoader(true);
     }
   }, [loading, modelLoading]);
+
+  useEffect(() => {
+    if (projectName) setProjectName(projectName);
+  }, [projectName, setProjectName]);
 
   const openARView = () => {
     if (!modelUrl) {
@@ -290,8 +294,13 @@ const ShareARPage = (props) => {
                 }
               }}
               title={["Front","Side","Back"][i]}
+              disabled={presetsLoading}
             >
-              <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
+              {presetsLoading ? (
+                <span style={{ width: 20, height: 20, display: 'inline-block', textAlign: 'center' }}>...</span>
+              ) : (
+                <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
+              )}
             </IconButton>
           ))}
         </div>
