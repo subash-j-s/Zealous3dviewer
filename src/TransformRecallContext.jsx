@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from "react";
+import { storage, ref, uploadBytes, getDownloadURL } from "./firebase";
 
 // 3 slots: 1=Front, 2=Side, 3=Back
 const defaultPresets = [
@@ -44,4 +45,26 @@ export function TransformRecallProvider({ children }) {
 
 export function useTransformRecall() {
   return useContext(TransformRecallContext);
+}
+
+// Save presets to Firebase Storage as JSON
+export async function savePresetsToFirebase(projectName, presets) {
+  if (!projectName) return;
+  const jsonRef = ref(storage, `projects/${projectName}/transform-presets.json`);
+  const blob = new Blob([JSON.stringify(presets)], { type: "application/json" });
+  await uploadBytes(jsonRef, blob);
+}
+
+// Load presets from Firebase Storage as JSON
+export async function loadPresetsFromFirebase(projectName) {
+  if (!projectName) return null;
+  try {
+    const jsonRef = ref(storage, `projects/${projectName}/transform-presets.json`);
+    const url = await getDownloadURL(jsonRef);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("Failed to fetch presets JSON");
+    return await response.json();
+  } catch (e) {
+    return null;
+  }
 }

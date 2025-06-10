@@ -27,6 +27,8 @@ import { Environment } from '@react-three/drei';
 // } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { useTransformRecall } from "./TransformRecallContext";
+import { savePresetsToFirebase } from "./TransformRecallContext";
+import { useParams } from "react-router-dom";
 
 // RenderEffects Component
 const RenderEffects = ({ effects }) => {
@@ -53,7 +55,8 @@ const Inspector = ({
   setModelSettings,
   setShowGrid,
   showGrid,
-  modelLoading // <-- Add modelLoading prop
+  modelLoading, // <-- Add modelLoading prop
+  controlsRef // <-- Accept controlsRef prop
 }) => {
   const [livePosition, setLivePosition] = useState({ x: 0, y: 0, z: 0 });
   const [liveRotation, setLiveRotation] = useState({ x: 0, y: 0, z: 0 });
@@ -67,10 +70,14 @@ const Inspector = ({
   const [effectsOpen, setEffectsOpen] = useState(false); 
   const [skyboxFading, setSkyboxFading] = useState(false);
   const [pendingSkybox, setPendingSkybox] = useState(null);
+  const [cloudSaveStatus, setCloudSaveStatus] = useState(""); // <-- Add cloudSaveStatus state
 
   // 0: original, 1-3: user slots
   const [savedTransforms, setSavedTransforms] = useState([null, null, null, null]);
   const originalTransform = useRef({ position: null, rotation: null });
+
+  const params = useParams();
+  const projectName = params.projectName || window.projectName || "demo";
 
   useEffect(() => {
     if (selectedModel?.scene) {
@@ -125,7 +132,7 @@ const Inspector = ({
   // Save current transform to a slot (1-3)
   const { savePreset, recallPreset, presets } = useTransformRecall();
   const [allSavedPrompt, setAllSavedPrompt] = useState(false);
-  const saveTransform = (index) => {
+  const saveTransform = async (index) => {
     if (index === 0) return; // Prevent overwriting original
     const newTransforms = [...savedTransforms];
     newTransforms[index] = {
@@ -134,6 +141,8 @@ const Inspector = ({
     };
     setSavedTransforms(newTransforms);
     savePreset(index, livePosition, liveRotation); // <-- Save to context
+    // Save all presets to Firebase
+    await savePresetsToFirebase(projectName, newTransforms);
     // Check if all three slots are filled
     if (newTransforms[1] && newTransforms[2] && newTransforms[3]) {
       setAllSavedPrompt(true);
@@ -323,9 +332,31 @@ const Inspector = ({
                   3
                 </Button>
               </Box>
-              {allSavedPrompt && (
+              {/* Save Current Transform to Cloud Button */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Button size="small" variant="contained" color="primary"
+                  onClick={async () => {
+                    setCloudSaveStatus("");
+                    try {
+                      const singleTransform = [{ position: { ...livePosition }, rotation: { ...liveRotation } }];
+                      await savePresetsToFirebase(projectName, singleTransform);
+                      setCloudSaveStatus("success");
+                    } catch (e) {
+                      setCloudSaveStatus("error");
+                    }
+                  }}
+                  sx={{ fontSize: '10px', minWidth: 120, minHeight: 22, borderRadius: 2 }}>
+                  Save Current Transform to Cloud
+                </Button>
+              </Box>
+              {cloudSaveStatus === 'success' && (
                 <Box sx={{ mt: 1, textAlign: 'center', color: 'green', fontWeight: 'bold', fontSize: '12px' }}>
-                  All 3 positions and rotations saved!
+                  Transform saved to cloud!
+                </Box>
+              )}
+              {cloudSaveStatus === 'error' && (
+                <Box sx={{ mt: 1, textAlign: 'center', color: 'red', fontWeight: 'bold', fontSize: '12px' }}>
+                  Failed to save transform.
                 </Box>
               )}
 
@@ -359,6 +390,40 @@ const Inspector = ({
             </Box>
             </Box>
           </Collapse>
+
+          {/* Reset View Button */}
+          <Button
+            variant="contained"
+            style={{ marginTop: 12, background: '#eee', color: '#222', fontWeight: 'bold' }}
+            onClick={() => {
+              // Use controlsRef from props
+              if (controlsRef && controlsRef.current && selectedModel && selectedModel.scene) {
+                const controls = controlsRef.current;
+                const model = selectedModel;
+                const box = new THREE.Box3().setFromObject(model.scene);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                model.scene.position.sub(center);
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = controls.object.fov * (Math.PI / 180);
+                const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
+                controls.object.position.set(center.x, center.y, cameraZ + maxDim);
+                controls.object.lookAt(center);
+                controls.target.set(center.x, center.y, center.z);
+                controls.update();
+                // Debug log
+                console.log('[DEBUG] Reset View: Camera and model centered', {
+                  cameraPosition: controls.object.position,
+                  target: controls.target,
+                  modelPosition: model.scene.position
+                });
+              } else {
+                console.log('[DEBUG] Reset View: controlsRef or selectedModel not available');
+              }
+            }}
+          >
+            Reset View
+          </Button>
         </Box>
       </Collapse>
 

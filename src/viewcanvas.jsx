@@ -14,7 +14,7 @@ const Viewcanvas = () => {
     <div className='app-container' >
          <Canvas camera={{ position: [0, 0, 3], fov: 40 }} dpr={[1, 2]} className='AppBg'>
         <ambientLight intensity={0.2} />
-        <OrbitControls/>
+        <OrbitControls enablePan={false} enableRotate={false} />
         <ContactShadows
           position={[0, -0.4, 0]} // Adjust shadow position to be closer to model base
           opacity={0.5}

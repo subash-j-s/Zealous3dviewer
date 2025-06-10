@@ -137,14 +137,14 @@ const storeModel = (modelData, fileName) => {
 };
 
 const ModelLoader = ({ setHierarchy, setSelectedModel, selectedSkybox, setShowPreview, 
-  showPreview, setModelSettings,setModelUrl,setModelFile,showGrid,selectedVariant,setVariants  }) => {
+  showPreview, setModelSettings,setModelUrl,setModelFile,showGrid,selectedVariant,setVariants, controlsRef }) => {
   const [uploadedModel, setUploadedModel] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [presets, setPresets] = useState([]);
   const [modelPosition, setModelPosition] = useState({ x: 0, y: 0, z: 0 });
   const [modelRotation, setModelRotation] = useState({ x: 0, y: 0, z: 0 });
-  const controlsRef = useRef();
+  // const controlsRef = useRef();
 
   useEffect(() => {
     if (!showPreview) {
@@ -318,7 +318,7 @@ const AxesHelperComponent = ({
         )}
 
         <ambientLight intensity={0.2} />
-        <OrbitControls ref={controlsRef} />
+        <OrbitControls ref={controlsRef} enablePan={false} enableRotate={true} />
         <ContactShadows position={[0, -0.4, 0]} opacity={0.5} scale={10} blur={1.5} far={1} />
         <Environment preset={selectedSkybox || 'city'} background={false} />
         

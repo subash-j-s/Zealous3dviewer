@@ -14,7 +14,8 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { useTransformRecall } from "./TransformRecallContext";
+import { useTransformRecall, loadPresetsFromFirebase } from "./TransformRecallContext";
+import { useParams } from "react-router-dom";
 
 
 const getArViewerUrl = (modelUrl, type = "google") => {
@@ -67,6 +68,9 @@ const PreviewViewer = () => {
   const arType = "google";
 
   const { savePreset } = useTransformRecall();
+  const params = useParams();
+  const projectName = params.projectName || window.projectName || "demo";
+  const [presets, setPresets] = useState([null, null, null, null]);
 
   useEffect(() => {
     // Replace with your model URL
@@ -99,6 +103,16 @@ const PreviewViewer = () => {
       .then(res => res.json())
       .then(data => setModels(data.models || []));
   }, []);
+
+  // Load presets from Firebase on mount
+  useEffect(() => {
+    async function fetchPresets() {
+      const loaded = await loadPresetsFromFirebase(projectName);
+      console.log('[PreviewViewer] Loaded presets from Firebase for project:', projectName, loaded);
+      if (loaded && Array.isArray(loaded)) setPresets(loaded);
+    }
+    fetchPresets();
+  }, [projectName]);
 
   const handleARView = () => setQrOpen(true);
   const handleCloseQR = () => setQrOpen(false);
@@ -306,9 +320,8 @@ useEffect(() => {
             key={index}
             style={{ backgroundColor: "#eee", flexDirection: "column" }}
             onClick={() => {
-              const { presets } = useTransformRecall();
               const preset = presets[index];
-              if (preset) {
+              if (preset && preset.position && preset.rotation) {
                 setRotation({
                   x: (preset.rotation.x || 0) * Math.PI / 180,
                   y: (preset.rotation.y || 0) * Math.PI / 180,
@@ -316,6 +329,10 @@ useEffect(() => {
                 });
                 setPosition(preset.position);
                 setScale(1.5);
+                console.log(`[PreviewViewer] Applied preset ${index}:`, preset);
+              } else {
+                console.warn(`[PreviewViewer] No valid preset for button ${index}:`, preset);
+                alert(`No valid preset found for button ${index}. Check your Firebase JSON.`);
               }
             }}
             title={["Front", "Side", "Back"][i]}

@@ -137,7 +137,7 @@ useEffect(() => {
       >
         <ambientLight intensity={0.2} />
         {/* <pointLight position={[10, 10, 10]} intensity={0.5} /> */}
-        <OrbitControls ref={controlsRef} />
+        <OrbitControls ref={controlsRef} enablePan={false} enableRotate={false} />
         
         <Environment preset={skybox} background={false} />
         <Center>

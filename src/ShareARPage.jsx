@@ -8,7 +8,7 @@ import * as THREE from "three";
 import { Button, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { ContentCopy } from "@mui/icons-material";
-import { useTransformRecall } from "./TransformRecallContext";
+import { useTransformRecall, loadPresetsFromFirebase } from "./TransformRecallContext";
 
 const ShareARPage = (props) => {
   // Accept projectName from either /share-ar/:projectName or /embedded/:projectName
@@ -32,7 +32,9 @@ const ShareARPage = (props) => {
   const [modelSize, setModelSize] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
-  const { presets } = useTransformRecall();
+  const [presets, setPresets] = useState([null, null, null, null]);
+  const [loadingPresets, setLoadingPresets] = useState(true);
+  const { presets: contextPresets } = useTransformRecall();
   const [showInitialLoader, setShowInitialLoader] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -80,6 +82,25 @@ const ShareARPage = (props) => {
       setShowInitialLoader(true);
     }
   }, [loading, modelLoading]);
+
+  useEffect(() => {
+    async function fetchPresets() {
+      setLoadingPresets(true);
+      let loaded = null;
+      try {
+        loaded = await loadPresetsFromFirebase(projectName);
+      } catch {}
+      if (!loaded) {
+        try {
+          const local = localStorage.getItem('transformPresets');
+          if (local) loaded = JSON.parse(local);
+        } catch {}
+      }
+      if (loaded && Array.isArray(loaded)) setPresets(loaded);
+      setLoadingPresets(false);
+    }
+    if (projectName) fetchPresets();
+  }, [projectName]);
 
   const openARView = () => {
     if (!modelUrl) {
@@ -196,7 +217,7 @@ const ShareARPage = (props) => {
         }}
       >
         <ambientLight intensity={0.5} />
-        <OrbitControls ref={controlsRef} />
+        <OrbitControls ref={controlsRef} enablePan={false} enableRotate={true} />
         <Environment preset={skybox} background={false} />
         <Center>
           {modelUrl && position && rotation && (
@@ -263,20 +284,21 @@ const ShareARPage = (props) => {
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",
-          gap: 3,
-          zIndex: 1000,
-          background: "rgba(255, 255, 255, 0.9)",
-          padding: "4px 6px",
+          gap: 12,
+          zIndex: 9999, // ensure above all overlays
+          background: "rgba(255,255,255,0.95)",
+          padding: "4px 12px",
           borderRadius: "10px",
-          boxShadow: "0 3px 10px rgba(0, 0, 0, 0.1)",
+          boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
         }}>
           {[1, 2, 3].map((index, i) => (
             <IconButton
               key={index}
-              style={{ backgroundColor: "#eee" }}
+              style={{ backgroundColor: "#eee", flexDirection: "column" }}
+              disabled={loadingPresets || !presets[index]}
               onClick={() => {
                 const preset = presets[index];
-                if (preset) {
+                if (preset && preset.position && preset.rotation) {
                   setRotation({
                     x: (preset.rotation.x || 0) * Math.PI / 180,
                     y: (preset.rotation.y || 0) * Math.PI / 180,
@@ -287,15 +309,33 @@ const ShareARPage = (props) => {
                     y: preset.position.y,
                     z: preset.position.z
                   });
+                  if (controlsRef.current && cameraRef.current && modelCenter && modelSize) {
+                    const controls = controlsRef.current;
+                    const center = modelCenter;
+                    const size = modelSize;
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = cameraRef.current.fov * (Math.PI / 180);
+                    const distance = maxDim / (2 * Math.tan(fov / 2));
+                    cameraRef.current.position.set(center.x, center.y, center.z + distance * 1.5);
+                    cameraRef.current.lookAt(center);
+                    controls.target.set(center.x, center.y, center.z);
+                    controls.update();
+                  }
+                } else {
+                  alert(`No valid preset found for button ${index}.`);
                 }
               }}
               title={["Front","Side","Back"][i]}
             >
-              <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
+              {loadingPresets ? (
+                <span className="spinner" style={{ width: 18, height: 18, border: '2px solid #ccc', borderTop: '2px solid #1976d2', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }} />
+              ) : (
+                <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
+              )}
             </IconButton>
           ))}
-        </div>
-
+          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+      </div>
 
       <div style={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>
         <Button

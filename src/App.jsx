@@ -1,6 +1,6 @@
 //App.jsx
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Insceptor from "./Insceptor";
 import ModelLoader from "./ModelLoader";
 import PreviewViewer from "./PreviewViewer";
@@ -48,6 +48,8 @@ export default function App() {
 
 
   const [cameraPosition, setCameraPosition] = useState({ x: 0, y: 0, z: 0 });
+  // LIFTED CONTROLS REF
+  const controlsRef = useRef();
 
   
 
@@ -456,7 +458,8 @@ export default function App() {
           selectedVariant={variants[currentVariantIndex]} // Pass selected variant
           setVariants={setVariants} // ✅ Pass setVariants here
           uploadedModel={selectedModel} // ✅ Ensure selectedModel is passed 
-          setCameraPosition={setCameraPosition} 
+          setCameraPosition={setCameraPosition}
+          controlsRef={controlsRef} // <-- Pass controlsRef
         />
 
         {/* Show PreviewViewer only when showPreview is true */}
@@ -681,7 +684,7 @@ export default function App() {
             onToggleVariant={handleToggleVariant} // Pass the toggle function
             variants={variants} // Pass the variants array
             currentVariantIndex={currentVariantIndex} // Pass the current variant index
-             
+            controlsRef={controlsRef} // <-- Pass controlsRef
           />
         </div>
       )}

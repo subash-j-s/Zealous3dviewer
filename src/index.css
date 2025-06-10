@@ -366,6 +366,7 @@ canvas {
   animation: fadeIn 0.3s ease-out; /* Fade-in animation */
   flex-direction: column; /* Arrange children in a column layout */
   gap: 10px;
+  pointer-events: none; /* Allow clicks to pass through by default */
 }
 
 /* Fade-in animation */
@@ -531,7 +532,7 @@ canvas {
   right: 20px;
   transform: translateY(-50%); /* Center it vertically */
   /*width: 182px;  Set width for the preview box */
-  height: 48px; /* Set height for the preview box */
+  height: 48px; /* Set a fixed height for the button */
   border: 0px;
   border-radius: 10px; /* Rounded corners */
   display: block;
