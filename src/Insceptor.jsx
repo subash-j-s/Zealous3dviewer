@@ -11,7 +11,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { Input } from '@mui/joy';
 import { Canvas } from '@react-three/fiber';
-import { Environment, OrbitControls } from '@react-three/drei';
+import { Environment } from '@react-three/drei';
 // import {
 //   EffectComposer,
 //   Bloom,
@@ -67,72 +67,34 @@ const Inspector = ({
   const [effectsOpen, setEffectsOpen] = useState(false); 
   const [skyboxFading, setSkyboxFading] = useState(false);
   const [pendingSkybox, setPendingSkybox] = useState(null);
-  const { presets } = useTransformRecall();
-  const [projectNameInput, setProjectNameInput] = useState("");
 
   // 0: original, 1-3: user slots
   const [savedTransforms, setSavedTransforms] = useState([null, null, null, null]);
   const originalTransform = useRef({ position: null, rotation: null });
-  const controlsRef = useRef();
-  const cameraRef = useRef();
-  const initialCameraState = useRef({ position: null, target: null });
-  const lastLoadedFileRef = useRef(null);
 
   useEffect(() => {
-    if (selectedModel?.scene && controlsRef.current && cameraRef.current) {
-      // Get initial position/rotation before centering
-      const initialPos = {
-        x: selectedModel.scene.position.x,
-        y: selectedModel.scene.position.y,
-        z: selectedModel.scene.position.z
-      };
-      const initialRot = {
-        x: selectedModel.scene.rotation.x * 180 / Math.PI,
-        y: selectedModel.scene.rotation.y * 180 / Math.PI,
-        z: selectedModel.scene.rotation.z * 180 / Math.PI
-      };
+    if (selectedModel?.scene) {
       // Center the model ONCE when loaded
       const box = new THREE.Box3().setFromObject(selectedModel.scene);
       const center = box.getCenter(new THREE.Vector3());
       selectedModel.scene.position.sub(center); // Center the model
+      // Optionally reset rotation here if you want
       setLivePosition({ x: selectedModel.scene.position.x, y: selectedModel.scene.position.y, z: selectedModel.scene.position.z });
       setLiveRotation({ x: selectedModel.scene.rotation.x * 180 / Math.PI, y: selectedModel.scene.rotation.y * 180 / Math.PI, z: selectedModel.scene.rotation.z * 180 / Math.PI });
-      // Save original transform (imported values, not centered)
+      // Save original transform
       originalTransform.current = {
-        position: initialPos,
-        rotation: initialRot
+        position: { x: selectedModel.scene.position.x, y: selectedModel.scene.position.y, z: selectedModel.scene.position.z },
+        rotation: { x: selectedModel.scene.rotation.x * 180 / Math.PI, y: selectedModel.scene.rotation.y * 180 / Math.PI, z: selectedModel.scene.rotation.z * 180 / Math.PI }
       };
       setSavedTransforms((prev) => [
         {
-          position: { ...initialPos },
-          rotation: { ...initialRot }
+          position: { ...selectedModel.scene.position },
+          rotation: { ...selectedModel.scene.rotation }
         },
         prev[1], prev[2], prev[3]
       ]);
-      // Set camera to default position and look at center
-      const defaultCameraPos = { x: 0, y: 0, z: 3 };
-      cameraRef.current.position.set(defaultCameraPos.x, defaultCameraPos.y, defaultCameraPos.z);
-      cameraRef.current.lookAt(center.x, center.y, center.z);
-      controlsRef.current.target.set(center.x, center.y, center.z);
-      controlsRef.current.update();
-      // Store initial camera state for reset (after update)
-      initialCameraState.current = {
-        position: cameraRef.current.position.clone(),
-        target: { x: center.x, y: center.y, z: center.z }
-      };
-      // Save OrbitControls state for robust reset
-      if (controlsRef.current.saveState) {
-        controlsRef.current.saveState();
-      }
     }
   }, [selectedModel?.scene]);
-
-  useEffect(() => {
-    // When model is loaded via file, store it in lastLoadedFileRef
-    if (selectedModel && selectedModel.userData && selectedModel.userData.file) {
-      lastLoadedFileRef.current = selectedModel.userData.file;
-    }
-  }, [selectedModel]);
 
   const stepValue = sensitivity === 'high' ? 0.1 : 0.01;
   const rotStep = sensitivity === 'high' ? 5 : 1;
@@ -161,6 +123,7 @@ const Inspector = ({
   };
 
   // Save current transform to a slot (1-3)
+  const { savePreset, recallPreset, presets } = useTransformRecall();
   const [allSavedPrompt, setAllSavedPrompt] = useState(false);
   const saveTransform = (index) => {
     if (index === 0) return; // Prevent overwriting original
@@ -170,6 +133,7 @@ const Inspector = ({
       rotation: { ...liveRotation }
     };
     setSavedTransforms(newTransforms);
+    savePreset(index, livePosition, liveRotation); // <-- Save to context
     // Check if all three slots are filled
     if (newTransforms[1] && newTransforms[2] && newTransforms[3]) {
       setAllSavedPrompt(true);
@@ -393,75 +357,14 @@ const Inspector = ({
                 disabled={!savedTransforms[3]}  onClick={() => recallTransform(3)}
                 sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  3 </Button>
             </Box>
-            <Box sx={{ display: 'flex', gap: 0.5, mt: 1, justifyContent: 'center' }}>
-              <Button size="small"
-                variant="outlined"
-                color="error"
-                onClick={() => {
-                  if (originalTransform.current.position && originalTransform.current.rotation) {
-                    setLivePosition({ ...originalTransform.current.position });
-                    setLiveRotation({ ...originalTransform.current.rotation });
-                    updateModelTransform(originalTransform.current.position, originalTransform.current.rotation);
-                    // Reset camera pan/target
-                    if (controlsRef.current && selectedModel?.scene) {
-                      // Compute model center
-                      const box = new THREE.Box3().setFromObject(selectedModel.scene);
-                      const center = box.getCenter(new THREE.Vector3());
-                      controlsRef.current.target.set(center.x, center.y, center.z);
-                      controlsRef.current.update();
-                    }
-                  }
-                }}
-                sx={{ fontSize: '8px', minWidth: 50, minHeight: 16, px: 1, py: 0.1, borderRadius: 2, ml: 1 }}>
-                Reset Transform
-              </Button>
-              <Button size="small"
-                variant="outlined"
-                color="primary"
-                onClick={() => {
-                  // Robust reset: use OrbitControls reset, then set camera/target
-                  if (controlsRef.current && cameraRef.current && initialCameraState.current.position && initialCameraState.current.target) {
-                    if (controlsRef.current.reset) {
-                      controlsRef.current.reset();
-                    }
-                    // Extra robustness: set camera position/target after reset
-                    cameraRef.current.position.copy(initialCameraState.current.position);
-                    controlsRef.current.target.set(
-                      initialCameraState.current.target.x,
-                      initialCameraState.current.target.y,
-                      initialCameraState.current.target.z
-                    );
-                    controlsRef.current.update();
-                  }
-                }}
-                sx={{ fontSize: '8px', minWidth: 50, minHeight: 16, px: 1, py: 0.1, borderRadius: 2, ml: 1 }}>
-                Reset View
-              </Button>
-              <Button size="small"
-                variant="outlined"
-                color="secondary"
-                onClick={() => {
-                  // Reload model from cache (last loaded file)
-                  if (lastLoadedFileRef.current && typeof setModelFile === 'function') {
-                    setModelFile(lastLoadedFileRef.current);
-                  } else {
-                    alert('No cached model file found to reload.');
-                  }
-                }}
-                sx={{ fontSize: '8px', minWidth: 50, minHeight: 16, px: 1, py: 0.1, borderRadius: 2, ml: 1 }}>
-                Reload Model
-              </Button>
-            </Box>
             </Box>
           </Collapse>
         </Box>
       </Collapse>
 
       {/* 3D Model Canvas */}
-      <Canvas style={{ height: '400px', width: '100%', borderRadius: '8px', marginTop: '16px' }}
-        onCreated={({ camera }) => { cameraRef.current = camera; }}>
+      <Canvas style={{ height: '400px', width: '100%', borderRadius: '8px', marginTop: '16px' }}>
         <Environment preset={selectedSkybox} background={false} />
-        <OrbitControls ref={controlsRef} />
         {(effects.bloom || effects.vignette) && (
           <EffectComposer>
             {effects.bloom && <Bloom luminanceThreshold={0} luminanceSmoothing={0.9} height={300} />}

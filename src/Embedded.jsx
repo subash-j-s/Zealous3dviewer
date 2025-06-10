@@ -1,15 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogActions, DialogContent, DialogTitle, Button, TextField, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import { useTransformRecall } from "./TransformRecallContext";
 
-const Embedded = ({ open, onClose, embedUrl, projectName }) => {
-    const { setProjectName } = useTransformRecall();
+const Embedded = ({ open, onClose, embedUrl }) => {
     const embedCode = `<iframe src="${embedUrl}" width="600" height="400"></iframe>`;
 
-    useEffect(() => {
-        if (projectName) setProjectName(projectName);
-    }, [projectName, setProjectName]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
