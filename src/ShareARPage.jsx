@@ -9,6 +9,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { ContentCopy } from "@mui/icons-material";
 import { useTransformRecall, loadPresetsFromFirebase } from "./TransformRecallContext";
 import { OrbitControls, Environment, Center, useGLTF, GizmoHelper, GizmoViewport } from "@react-three/drei";
+// import { GizmoViewcube, Text } from '@react-three/drei';
 
 const ShareARPage = (props) => {
   // Accept projectName from either /share-ar/:projectName or /embedded/:projectName
@@ -264,6 +265,7 @@ const ShareARPage = (props) => {
           )}
         </Center>
         <GizmoHelper alignment="bottom-left" margin={[80, 80]}>
+          {/* <GizmoViewcube /> */}
           <GizmoViewport />
         </GizmoHelper>
       </Canvas>

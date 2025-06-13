@@ -9,9 +9,9 @@ import { Card, CardContent, Typography, Button } from "@mui/material";
 import { Amplify } from 'aws-amplify';
 import { Storage } from '@aws-amplify/storage';
 import awsconfig from './aws-exports';
-import { Text } from '@react-three/drei';
+// import { GizmoViewcube, Text } from '@react-three/drei';
 
-import { OrbitControls, ContactShadows, Environment, Center, Html, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Environment, Center, Html, Grid, GizmoHelper, GizmoViewport, } from '@react-three/drei';
 
 
 function PositionTracker({ onUpdate }) {
@@ -320,6 +320,7 @@ const AxesHelperComponent = ({
   {/* Render the gizmo helper with a valid Drei gizmo inside */}
   <GizmoHelper alignment="bottom-left" margin={[80, 80]}>
     {/* Use a Drei gizmo, e.g., GizmoViewport or Grid */}
+   {/* <GizmoViewcube /> */}
     <GizmoViewport />
   </GizmoHelper>
 </Center>
