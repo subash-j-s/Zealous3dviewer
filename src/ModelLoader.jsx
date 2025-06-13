@@ -314,7 +314,7 @@ const AxesHelperComponent = ({
     />
   ) : (
     // Fallback: show axes helper if no model loaded
-    <primitive object={new THREE.AxesHelper(1)} />
+    <primitive object={new THREE.AxesHelper(0)} />
   )}
 
   {/* Render the gizmo helper with a valid Drei gizmo inside */}
