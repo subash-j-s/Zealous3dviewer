@@ -3,7 +3,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Canvas, useThree,useFrame  } from '@react-three/fiber';
-import { OrbitControls, ContactShadows, Environment, Center, Html, Grid } from '@react-three/drei';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import * as THREE from 'three';
 import { Card, CardContent, Typography, Button } from "@mui/material";
@@ -12,11 +11,12 @@ import { Storage } from '@aws-amplify/storage';
 import awsconfig from './aws-exports';
 import { Text } from '@react-three/drei';
 
+import { OrbitControls, ContactShadows, Environment, Center, Html, Grid, GizmoHelper, GizmoViewport } from '@react-three/drei';
 
 
 function PositionTracker({ onUpdate }) {
   const { scene } = useThree();
-  const modelRef = useRef();
+  const modelRef = useRef(null);
 
   useFrame(() => {
     if (modelRef.current) {
@@ -27,25 +27,6 @@ function PositionTracker({ onUpdate }) {
 
   return <primitive object={scene} ref={modelRef} />;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 Amplify.configure(awsconfig);
 
@@ -103,7 +84,7 @@ const ModelViewer = ({ model, position, rotation }) => {
       camera.position.set(center.x, center.y, cameraZ + maxDim);
       camera.lookAt(center);
 
-      if (controls) {
+      if (controls && controls.target) {
         controls.target.set(center.x, center.y, center.z);
         controls.update();
       }
@@ -324,29 +305,40 @@ const AxesHelperComponent = ({
         
         {/* <CameraTracker setCameraPosition={setCameraPosition} /> */}
         <Center>
-          <ModelViewer
-            model={uploadedModel}
-            position={modelPosition}
-            rotation={modelRotation}
-          /> 
-          
-        </Center>
+  {/* Render the model or fallback axes in the scene */}
+  {uploadedModel ? (
+    <ModelViewer
+      model={uploadedModel}
+      position={modelPosition}
+      rotation={modelRotation}
+    />
+  ) : (
+    // Fallback: show axes helper if no model loaded
+    <primitive object={new THREE.AxesHelper(1)} />
+  )}
+
+  {/* Render the gizmo helper with a valid Drei gizmo inside */}
+  <GizmoHelper alignment="bottom-left" margin={[80, 80]}>
+    {/* Use a Drei gizmo, e.g., GizmoViewport or Grid */}
+    <GizmoViewport />
+  </GizmoHelper>
+</Center>
 
         {!uploadedModel && !loading && (
           <Html center>
-            <Card className="upload-options" style={{  width: 300,  height: 180,  borderRadius: 12, padding: 16, boxShadow:"0 4px 8px rgba(0, 0, 0, 0.2)",
+            <Card className="upload-options" style={{  width: 300,  height: 200,  borderRadius: 12, padding: 16, boxShadow:"0 4px 8px rgba(0, 0, 0, 0.2)",
                 backgroundColor: '#fff', display: 'flex',  flexDirection: 'column',  justifyContent: 'center',}} >
               <CardContent>
                 <Typography variant="body2"  className="drag-drop-message"  sx={{fontWeight:'bold', py:1, borderRadius:2, fontSize: '0.95rem',
                  mt: 1,  textAlign: 'center', bgcolor: 'background.paper',  transition: 'all 0.3s ease',
-                  '&:hover': {transform: 'scale(1.01)', fontFamily: "Inter, sans-serif",  },}} >
+                  }} >
                   Drag and drop a 3D model <br /><br /> (.gltf or .glb) here
                 </Typography><br />
                 <Button
                   variant="contained"
                   component="label"
                   className="file-input" sx={{width:130, py: 0.5, borderRadius: 2, fontSize: '0.85rem', textTransform: 'none', boxShadow:"0 4px 8px rgba(0, 0, 0, 0.2)",
-                     transition: 'all 0.3s ease-in-out', '&:hover': { fontWeight: 600,boxShadow: 2,color:'black', }}} >
+                     transition: 'all 0.3s ease-in-out', '&:hover': { color:'black', }}} >
                  Browse Files
                   <input
                     type="file"
@@ -373,7 +365,7 @@ const AxesHelperComponent = ({
         </div>
       )}
    
-      <div
+      {/* <div
         style={{
           position: 'fixed',
           bottom: 20,
@@ -400,7 +392,7 @@ const AxesHelperComponent = ({
 
                   
         </Canvas>
-      </div>
+      </div> */}
 
        </div>
   );

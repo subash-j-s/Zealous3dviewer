@@ -187,245 +187,238 @@ const Inspector = ({
  
   return (
     <Box sx={{ width: 230, bgcolor: "background.level1", p: 2, height: "100vh", overflowY: "auto", borderLeft: "5px solid", borderColor: "divider", boxShadow: "sm" }}>
-      <Box onClick={() => setSettingsOpen(!settingsOpen)} sx={{ cursor: 'pointer', mt: 1, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography level="subtitle1" sx={{ fontSize: '14px', fontWeight: 'bold',ml:-1, }}>Settings</Typography>
-        {settingsOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-      </Box>
+      {/* Settings controls always visible, no dropdown */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, fontFamily: 'Inter, sans-serif' }}>
+        <BackgroundSetting setModelSettings={setModelSettings} />
+        <SkyboxSetting onSkyboxChange={handleSkyboxChange} selectedSkybox={selectedSkybox} />
+        <PreviewButton setShowPreview={setShowPreview} />
+        <GridSetting setShowGrid={setShowGrid} showGrid={showGrid} />
 
-      <Collapse in={settingsOpen} timeout="auto" unmountOnExit>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1,fontFamily: 'Inter, sans-serif', }}>
-          <BackgroundSetting setModelSettings={setModelSettings} />
-          <SkyboxSetting onSkyboxChange={handleSkyboxChange} selectedSkybox={selectedSkybox} />
-          <PreviewButton setShowPreview={setShowPreview} />
-          <GridSetting setShowGrid={setShowGrid} showGrid={showGrid} />
-
-       {/* Effects Section */}
-          <Box onClick={() => setEffectsOpen(!effectsOpen)} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',  
-            borderRadius: 2, bgcolor: 'background.level1', ml: -0.9,mb:1,  }}>
-            <Typography level="subtitle1" sx={{ fontSize: '12px' }}>Effects</Typography>
-            {effectsOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        {/* Effects Section */}
+        <Box onClick={() => setEffectsOpen(!effectsOpen)} sx={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between',  borderRadius: 2, bgcolor: 'background.level1', ml: -0.9,mb:1,  }}>
+          <Typography level="subtitle1" sx={{ fontSize: '12px' }}>Effects</Typography>
+          {effectsOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        </Box>
+        <Collapse in={effectsOpen} timeout="auto" unmountOnExit>
+          <Box sx={{ border: '1px solid #ccc', borderRadius: 5, p: 0.5, ml: -0.9, bgcolor: 'background.level1' }}>
+            <EffectsDropdown effects={effects} setEffects={setEffects} />
           </Box>
-          <Collapse in={effectsOpen} timeout="auto" unmountOnExit>
-            <Box sx={{ border: '1px solid #ccc', borderRadius: 5, p: 0.5, ml: -0.9, bgcolor: 'background.level1' }}>
-              <EffectsDropdown effects={effects} setEffects={setEffects} />
-            </Box>
-          </Collapse>
-          
+        </Collapse>
+        
 
-          {/* Camera Section */}
-          <Box onClick={() => setTransformOpen(!transformOpen)} sx={{ cursor: 'pointer',  display: 'flex', alignItems: 'center', 
-            justifyContent: 'space-between', mb: 1,  borderRadius: 5, bgcolor: 'background.level1',ml: -0.9 }}>
-            <Typography level="subtitle1" sx={{ fontSize: '12px',  }}>Model Position preset</Typography>
-            {transformOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-          </Box>
+        {/* Camera Section */}
+        <Box onClick={() => setTransformOpen(!transformOpen)} sx={{ cursor: 'pointer',  display: 'flex', alignItems: 'center', 
+          justifyContent: 'space-between', mb: 1,  borderRadius: 5, bgcolor: 'background.level1',ml: -0.9 }}>
+          <Typography level="subtitle1" sx={{ fontSize: '12px',  }}>Model Position preset</Typography>
+          {transformOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        </Box>
 
-          <Collapse in={transformOpen} timeout="auto" unmountOnExit>
-            <Box sx={{ border: '1px solid #ccc', borderRadius: 5, p: 1,ml:-0.9, }}>
-              {/* Sensitivity and Axis Toggles in Single Row */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography level="subtitle1" sx={{ fontSize: '12px', mb: 0.5 }}>Sensitivity</Typography>
-                <ToggleButtonGroup
-                  value={sensitivity}
-                  exclusive
-                  onChange={(e, val) => val && setSensitivity(val)}
-                  size="small"
-                  sx={{
-                    borderRadius: 2,
-                    bgcolor: 'background.level1',
-                    padding: '2px',
-                    fontFamily: 'Inter, sans-serif',
-                  }}
-                >
-                  <ToggleButton
-                    value="low"
-                    sx={{
-                      fontSize: '9px',
-                      px: 0.7,
-                      py: 0.3,
-                      minWidth: 28,
-                      minHeight: 18,
-                    }}
-                  >
-                    Low
-                  </ToggleButton>
-                  <ToggleButton
-                    value="high"
-                    sx={{
-                      fontSize: '9px',
-                      px: 0.7,
-                      py: 0.3,
-                      minWidth: 28,
-                      minHeight: 18,
-                    }}
-                  >
-                    High
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Box>
-
-              {/* Position Controls */}
-              {['x', 'y', 'z'].map((axis) => (
-                <Box key={`pos-${axis}`} sx={{ mt: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', }}>
-                    <Typography sx={{ fontSize: '11px' }}>Pos {axis.toUpperCase()}:</Typography>
-                    <Input
-                      type="number"
-                      size="sm"
-                      value={livePosition[axis]}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val)) handlePositionChange(axis, val);
-                      }}
-                      sx={{ width: 100, fontFamily: 'Inter, sans-serif', fontSize: '12px', }}
-                    />
-                  </Box>
-                  <Slider
-                    size="small"
-                    value={livePosition[axis]}
-                    onChange={(_, value) => handlePositionChange(axis, value)}
-                    min={-10}
-                    max={10}
-                    step={stepValue}
-                  />
-                </Box>
-              ))}
-
-              {/* Rotation Controls */}
-              {['x', 'y', 'z'].map((axis) => (
-                <Box key={`rot-${axis}`} sx={{ mt: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography sx={{ fontSize: '11px' }}>Rot {axis.toUpperCase()} (°):</Typography>
-                    <Input
-                      type="number"
-                      size="sm"
-                      value={liveRotation[axis]}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value);
-                        if (!isNaN(val)) handleRotationChange(axis, val);
-                      }}
-                      sx={{ width: 100, fontSize: '12px' }}
-                    />
-                  </Box>
-                  <Slider
-                    size="small"
-                    value={liveRotation[axis]}
-                    onChange={(_, value) => handleRotationChange(axis, value)}
-                    min={-180}
-                    max={180}
-                    step={rotStep}
-                  />
-                </Box>
-              ))}
-
-              {/* Save Buttons Row */}
-              <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontSize: '12px' }}>
-                <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(1)}
-                  sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
-                  1
-                </Button>
-                <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(2)}
-                  sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
-                  2
-                </Button>
-                <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(3)}
-                  sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
-                  3
-                </Button>
-              </Box>
-              {/* Save Current Transform to Cloud Button */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                <Button size="small" variant="contained" color="primary"
-                  onClick={async () => {
-                    setCloudSaveStatus("");
-                    try {
-                      const singleTransform = [{ position: { ...livePosition }, rotation: { ...liveRotation } }];
-                      await savePresetsToFirebase(projectName, singleTransform);
-                      setCloudSaveStatus("success");
-                    } catch (e) {
-                      setCloudSaveStatus("error");
-                    }
-                  }}
-                  sx={{ fontSize: '10px', minWidth: 120, minHeight: 22, borderRadius: 2 }}>
-                  Save Current Transform to Cloud
-                </Button>
-              </Box>
-              {cloudSaveStatus === 'success' && (
-                <Box sx={{ mt: 1, textAlign: 'center', color: 'green', fontWeight: 'bold', fontSize: '12px' }}>
-                  Transform saved to cloud!
-                </Box>
-              )}
-              {cloudSaveStatus === 'error' && (
-                <Box sx={{ mt: 1, textAlign: 'center', color: 'red', fontWeight: 'bold', fontSize: '12px' }}>
-                  Failed to save transform.
-                </Box>
-              )}
-
-              {/* Recall buttons in a single row */}
-            <Box sx={{ display: 'flex', gap: 0.5, mt: 1, justifyContent: 'center' }}>
-              {/* <Button
+        <Collapse in={transformOpen} timeout="auto" unmountOnExit>
+          <Box sx={{ border: '1px solid #ccc', borderRadius: 5, p: 1,ml:-0.9, }}>
+            {/* Sensitivity and Axis Toggles in Single Row */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <Typography level="subtitle1" sx={{ fontSize: '12px', mb: 0.5 }}>Sensitivity</Typography>
+              <ToggleButtonGroup
+                value={sensitivity}
+                exclusive
+                onChange={(e, val) => val && setSensitivity(val)}
                 size="small"
-                variant={savedTransforms[0] ? "contained" : "outlined"}
-                color={savedTransforms[0] ? "primary" : "inherit"}
-                disabled={!savedTransforms[0]}
-                onClick={() => recallTransform(0)}
                 sx={{
-                  fontSize: '8px',
-                  minWidth: 22,
-                  minHeight: 14,
-                  p:0.8,
-                  borderRadius: 2
+                  borderRadius: 2,
+                  bgcolor: 'background.level1',
+                  padding: '2px',
+                  fontFamily: 'Inter, sans-serif',
                 }}
               >
-                Default
-              </Button> */}
-              <Button size="small"  variant={savedTransforms[1] ? "contained" : "outlined"} color={savedTransforms[1] ? "primary" : "inherit"}
-                disabled={!savedTransforms[1]}  onClick={() => recallTransform(1)}
-                sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  1 </Button>
-              <Button size="small"  variant={savedTransforms[2] ? "contained" : "outlined"} color={savedTransforms[2] ? "primary" : "inherit"}
-                disabled={!savedTransforms[2]} onClick={() => recallTransform(2)}
-                sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  2 </Button>
-              <Button size="small"  variant={savedTransforms[3] ? "contained" : "outlined"} color={savedTransforms[3] ? "primary" : "inherit"}
-                disabled={!savedTransforms[3]}  onClick={() => recallTransform(3)}
-                sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  3 </Button>
+                <ToggleButton
+                  value="low"
+                  sx={{
+                    fontSize: '9px',
+                    px: 0.7,
+                    py: 0.3,
+                    minWidth: 28,
+                    minHeight: 18,
+                  }}
+                >
+                  Low
+                </ToggleButton>
+                <ToggleButton
+                  value="high"
+                  sx={{
+                    fontSize: '9px',
+                    px: 0.7,
+                    py: 0.3,
+                    minWidth: 28,
+                    minHeight: 18,
+                  }}
+                >
+                  High
+                </ToggleButton>
+              </ToggleButtonGroup>
             </Box>
-            </Box>
-          </Collapse>
 
-          {/* Reset View Button */}
-          <Button
-            variant="contained"
-            style={{ marginTop: 12, background: '#eee', color: '#222', fontWeight: 'bold' }}
-            onClick={() => {
-              // Use controlsRef from props
-              if (controlsRef && controlsRef.current && selectedModel && selectedModel.scene) {
-                const controls = controlsRef.current;
-                const model = selectedModel;
-                const box = new THREE.Box3().setFromObject(model.scene);
-                const size = box.getSize(new THREE.Vector3());
-                const center = box.getCenter(new THREE.Vector3());
-                model.scene.position.sub(center);
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const fov = controls.object.fov * (Math.PI / 180);
-                const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
-                controls.object.position.set(center.x, center.y, cameraZ + maxDim);
-                controls.object.lookAt(center);
-                controls.target.set(center.x, center.y, center.z);
-                controls.update();
-                // Debug log
-                console.log('[DEBUG] Reset View: Camera and model centered', {
-                  cameraPosition: controls.object.position,
-                  target: controls.target,
-                  modelPosition: model.scene.position
-                });
-              } else {
-                console.log('[DEBUG] Reset View: controlsRef or selectedModel not available');
-              }
-            }}
-          >
-            Reset View
-          </Button>
-        </Box>
-      </Collapse>
+            {/* Position Controls */}
+            {['x', 'y', 'z'].map((axis) => (
+              <Box key={`pos-${axis}`} sx={{ mt: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', }}>
+                  <Typography sx={{ fontSize: '11px' }}>Pos {axis.toUpperCase()}:</Typography>
+                  <Input
+                    type="number"
+                    size="sm"
+                    value={livePosition[axis]}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) handlePositionChange(axis, val);
+                    }}
+                    sx={{ width: 100, fontFamily: 'Inter, sans-serif', fontSize: '12px', }}
+                  />
+                </Box>
+                <Slider
+                  size="small"
+                  value={livePosition[axis]}
+                  onChange={(_, value) => handlePositionChange(axis, value)}
+                  min={-10}
+                  max={10}
+                  step={stepValue}
+                />
+              </Box>
+            ))}
+
+            {/* Rotation Controls */}
+            {['x', 'y', 'z'].map((axis) => (
+              <Box key={`rot-${axis}`} sx={{ mt: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography sx={{ fontSize: '11px' }}>Rot {axis.toUpperCase()} (°):</Typography>
+                  <Input
+                    type="number"
+                    size="sm"
+                    value={liveRotation[axis]}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) handleRotationChange(axis, val);
+                    }}
+                    sx={{ width: 100, fontSize: '12px' }}
+                  />
+                </Box>
+                <Slider
+                  size="small"
+                  value={liveRotation[axis]}
+                  onChange={(_, value) => handleRotationChange(axis, value)}
+                  min={-180}
+                  max={180}
+                  step={rotStep}
+                />
+              </Box>
+            ))}
+
+            {/* Save Buttons Row */}
+            <Box sx={{ display: 'flex', gap: 1, mt: 2, justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontSize: '12px' }}>
+              <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(1)}
+                sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
+                1
+              </Button>
+              <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(2)}
+                sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
+                2
+              </Button>
+              <Button size="small" variant="outlined" color="success" onClick={() => saveTransform(3)}
+                sx={{ fontSize: '9px', minWidth: 28, minHeight: 18, px: 1, py: 0.2, borderRadius: 2 }}>
+                3
+              </Button>
+            </Box>
+            {/* Save Current Transform to Cloud Button */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button size="small" variant="contained" color="primary"
+                onClick={async () => {
+                  setCloudSaveStatus("");
+                  try {
+                    const singleTransform = [{ position: { ...livePosition }, rotation: { ...liveRotation } }];
+                    await savePresetsToFirebase(projectName, singleTransform);
+                    setCloudSaveStatus("success");
+                  } catch (e) {
+                    setCloudSaveStatus("error");
+                  }
+                }}
+                sx={{ fontSize: '10px', minWidth: 120, minHeight: 22, borderRadius: 2 }}>
+                Save Current Transform to Cloud
+              </Button>
+            </Box>
+            {cloudSaveStatus === 'success' && (
+              <Box sx={{ mt: 1, textAlign: 'center', color: 'green', fontWeight: 'bold', fontSize: '12px' }}>
+                Transform saved to cloud!
+              </Box>
+            )}
+            {cloudSaveStatus === 'error' && (
+              <Box sx={{ mt: 1, textAlign: 'center', color: 'red', fontWeight: 'bold', fontSize: '12px' }}>
+                Failed to save transform.
+              </Box>
+            )}
+
+            {/* Recall buttons in a single row */}
+          <Box sx={{ display: 'flex', gap: 0.5, mt: 1, justifyContent: 'center' }}>
+            {/* <Button
+              size="small"
+              variant={savedTransforms[0] ? "contained" : "outlined"}
+              color={savedTransforms[0] ? "primary" : "inherit"}
+              disabled={!savedTransforms[0]}
+              onClick={() => recallTransform(0)}
+              sx={{
+                fontSize: '8px',
+                minWidth: 22,
+                minHeight: 14,
+                p:0.8,
+                borderRadius: 2
+              }}
+            >
+              Default
+            </Button> */}
+            <Button size="small"  variant={savedTransforms[1] ? "contained" : "outlined"} color={savedTransforms[1] ? "primary" : "inherit"}
+              disabled={!savedTransforms[1]}  onClick={() => recallTransform(1)}
+              sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  1 </Button>
+            <Button size="small"  variant={savedTransforms[2] ? "contained" : "outlined"} color={savedTransforms[2] ? "primary" : "inherit"}
+              disabled={!savedTransforms[2]} onClick={() => recallTransform(2)}
+              sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  2 </Button>
+            <Button size="small"  variant={savedTransforms[3] ? "contained" : "outlined"} color={savedTransforms[3] ? "primary" : "inherit"}
+              disabled={!savedTransforms[3]}  onClick={() => recallTransform(3)}
+              sx={{  fontSize: '8px',  minWidth: 22,  minHeight: 14,  px: 0.5,  py: 0.1,  borderRadius: 2}}>  3 </Button>
+          </Box>
+          </Box>
+        </Collapse>
+
+        {/* Reset View Button */}
+        <Button
+          variant="contained"
+          style={{ marginTop: 12, background: '#eee', color: '#222', fontWeight: 'bold' }}
+          onClick={() => {
+            // Use controlsRef from props
+            if (controlsRef && controlsRef.current && selectedModel && selectedModel.scene) {
+              const controls = controlsRef.current;
+              const model = selectedModel;
+              const box = new THREE.Box3().setFromObject(model.scene);
+              const size = box.getSize(new THREE.Vector3());
+              const center = box.getCenter(new THREE.Vector3());
+              model.scene.position.sub(center);
+              const maxDim = Math.max(size.x, size.y, size.z);
+              const fov = controls.object.fov * (Math.PI / 180);
+              const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
+              controls.object.position.set(center.x, center.y, cameraZ + maxDim);
+              controls.object.lookAt(center);
+              controls.target.set(center.x, center.y, center.z);
+              controls.update();
+              // Debug log
+              console.log('[DEBUG] Reset View: Camera and model centered', {
+                cameraPosition: controls.object.position,
+                target: controls.target,
+                modelPosition: model.scene.position
+              });
+            } else {
+              console.log('[DEBUG] Reset View: controlsRef or selectedModel not available');
+            }
+          }}
+        >
+          Reset View
+        </Button>
+      </Box>
 
       {/* 3D Model Canvas */}
       <Canvas style={{ height: '400px', width: '100%', borderRadius: '8px', marginTop: '16px' }}>
@@ -464,8 +457,8 @@ const Inspector = ({
         </div>
       )}
     </Box>
-                );
-              };
+  );
+};
 
 const BackgroundSetting = ({ setModelSettings }) => {
   const defaultColor = "#EBEBEB";

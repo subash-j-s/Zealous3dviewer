@@ -3,12 +3,12 @@ import { useParams, useLocation } from "react-router-dom";
 import { storage } from "./firebase";
 import { ref, getDownloadURL } from "firebase/storage";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Environment,Center, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { Button, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { ContentCopy } from "@mui/icons-material";
 import { useTransformRecall, loadPresetsFromFirebase } from "./TransformRecallContext";
+import { OrbitControls, Environment, Center, useGLTF, GizmoHelper, GizmoViewport } from "@react-three/drei";
 
 const ShareARPage = (props) => {
   // Accept projectName from either /share-ar/:projectName or /embedded/:projectName
@@ -53,15 +53,19 @@ const ShareARPage = (props) => {
         setUsdzUrl(data.usdzUrl);
         setSkybox(data.skybox || "studio");
         setBackground(data.background || "#ffffff");
-      } catch (error) {
+            } catch (error) {
         console.error("Error loading AR data:", error);
         setModelUrl("");
         setUsdzUrl("");
-        setErrorMsg(
-          error.message.includes("storage/object-not-found")
-            ? "This shared model does not exist or has been deleted."
-            : `Failed to load model: ${error.message}`
-        );
+        let msg = "";
+        if (error.message.includes("storage/object-not-found")) {
+          msg = "This shared model does not exist or has been deleted.";
+        } else if (error.message.includes("Failed to fetch")) {
+          msg = "Failed to load model: Could not fetch the file. This is usually caused by a bad link, missing file, or CORS/permissions issues on the storage bucket. Please check the model link, make sure the file exists, and that CORS and storage rules allow public access.";
+        } else {
+          msg = `Failed to load model: ${error.message}`;
+        }
+        setErrorMsg(msg);
       } finally {
         setLoading(false);
       }
@@ -83,20 +87,37 @@ const ShareARPage = (props) => {
     }
   }, [loading, modelLoading]);
 
+  const defaultPresets = [
+    null,
+    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }, // Front
+    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 90, z: 0 } }, // Side
+    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 180, z: 0 } }, // Back
+  ];
+
   useEffect(() => {
     async function fetchPresets() {
       setLoadingPresets(true);
       let loaded = null;
       try {
         loaded = await loadPresetsFromFirebase(projectName);
-      } catch {}
+        if (loaded) console.log('[DEBUG] Loaded presets from Firebase:', loaded);
+      } catch (e) {
+        console.log('[DEBUG] Error loading presets from Firebase:', e);
+      }
       if (!loaded) {
         try {
           const local = localStorage.getItem('transformPresets');
           if (local) loaded = JSON.parse(local);
-        } catch {}
+          if (loaded) console.log('[DEBUG] Loaded presets from localStorage:', loaded);
+        } catch (e) {
+          console.log('[DEBUG] Error loading presets from localStorage:', e);
+        }
       }
-      if (loaded && Array.isArray(loaded)) setPresets(loaded);
+      if (!loaded || !Array.isArray(loaded) || loaded.length < 4) {
+        loaded = defaultPresets;
+        console.log('[DEBUG] Using default presets:', loaded);
+      }
+      setPresets(loaded);
       setLoadingPresets(false);
     }
     if (projectName) fetchPresets();
@@ -192,8 +213,8 @@ const ShareARPage = (props) => {
       {/* Share Button Centered Above Model */}
       <div style={{
         position: "fixed",
-        top: 30,
-        left: "50%",
+        top: 90,
+        left: "92%",
         transform: "translateX(-50%)",
         zIndex: 1200,
         display: "flex",
@@ -203,7 +224,7 @@ const ShareARPage = (props) => {
         <Button
           variant="contained"
           startIcon={<img src="/icons/share.png" alt="Share" style={{ width: 22, height: 22 }} />}
-          sx={{ color: 'black', fontWeight: 'bold', background: '#eee', boxShadow: 2, borderRadius: 2, px: 2 }}
+          sx={{ color: 'black', fontWeight: 'bold', background: '#eee', boxShadow: 2, borderRadius: 2, px: 2, alignItems: 'center', display: 'flex' }}
           onClick={() => setShareOpen(true)}
         >
           Share
@@ -217,7 +238,7 @@ const ShareARPage = (props) => {
         }}
       >
         <ambientLight intensity={0.5} />
-        <OrbitControls ref={controlsRef} enablePan={false} enableRotate={true} />
+        <OrbitControls ref={controlsRef} enablePan={false}  enableRotate={true} />
         <Environment preset={skybox} background={false} />
         <Center>
           {modelUrl && position && rotation && (
@@ -242,87 +263,162 @@ const ShareARPage = (props) => {
             />
           )}
         </Center>
+        <GizmoHelper alignment="bottom-left" margin={[80, 80]}>
+          <GizmoViewport />
+        </GizmoHelper>
       </Canvas>
 
-      <div
-        className="preview-viewer-container"
-        style={{ marginBottom: 10 }}
-      >
-        <div style={{
-          backgroundColor: color,
-          position: 'fixed',
-          top: -310,
-          left: 20,
-          width: 120,
-          height: 40,
-          zIndex: 10000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          // backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          borderRadius: 8,
-          boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-          padding: '4px 8px',
-        }}>
-          <img src="/Zealous Logo.svg" alt="Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-        </div>
+      {/* Zealous Logo in top left corner */}
+      <div style={{
+        backgroundColor: color,
+        position: 'fixed',
+        top: 30,
+        left: 30,
+        width: 120,
+        height: 40,
+        zIndex: 10000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 8,
+        boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+        padding: '4px 8px',
+        pointerEvents: 'auto',
+      }}>
+        <img src="/Zealous Logo.svg" alt="Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
+      </div>
 
-        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee" }}>
+      {/* Controls: Move, Zoom Out, Zoom In in bottom left */}
+      <div
+        className="preview-viewer-controls"
+        style={{
+          position: 'fixed',
+          top: 350,
+          left: 70,
+          zIndex: 10010,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 16,
+          pointerEvents: 'auto',
+        }}
+      >
+        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee", zIndex: 2001 }}
+          onClick={() => {
+            setPosition({ x: 0, y: 0, z: 0 });
+            setRotation({ x: 0, y: 0, z: 0 });
+            if (cameraRef.current && modelCenter && modelSize) {
+              const center = modelCenter;
+              const size = modelSize;
+              const maxDim = Math.max(size.x, size.y, size.z);
+              const fov = cameraRef.current.fov * (Math.PI / 180);
+              const distance = maxDim / (2 * Math.tan(fov / 2));
+              cameraRef.current.position.set(center.x, center.y, center.z + distance * 1.5);
+              cameraRef.current.lookAt(center);
+              if (controlsRef.current) {
+                controlsRef.current.target.set(center.x, center.y, center.z);
+                controlsRef.current.update();
+              }
+            }
+          }}
+        >
           <img src="/icons/arrows.svg" alt="move icon" width={24} height={24} />
         </Button>
-        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee" }} onClick={() => setScale((s) => Math.max(s - 0.1, 0.3))}>
+        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee", zIndex: 2001 }}
+          onClick={() => {
+            setScale((s) => {
+              const newScale = Math.max(s - 0.1, 0.3);
+              if (cameraRef.current && modelCenter && modelSize) {
+                const camera = cameraRef.current;
+                const target = controlsRef.current ? controlsRef.current.target : modelCenter;
+                const direction = new THREE.Vector3().subVectors(camera.position, target).normalize();
+                const distance = camera.position.distanceTo(target);
+                const newDistance = distance * (s / newScale);
+                camera.position.copy(direction.multiplyScalar(newDistance).add(target));
+                camera.lookAt(target);
+                if (controlsRef.current) {
+                  controlsRef.current.update();
+                }
+              }
+              return newScale;
+            });
+          }}
+        >
           <img src="/icons/zoom-out.svg" alt="zoom out icon" width={24} height={24} />
         </Button>
-        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee" }} onClick={() => setScale((s) => Math.min(s + 0.1, 3))}>
+        <Button variant="contained" sx={buttonStyles} style={{ backgroundColor: "#eee", zIndex: 2001 }}
+          onClick={() => {
+            setScale((s) => {
+              const newScale = Math.min(s + 0.1, 3);
+              if (cameraRef.current && modelCenter && modelSize) {
+                const camera = cameraRef.current;
+                const target = controlsRef.current ? controlsRef.current.target : modelCenter;
+                const direction = new THREE.Vector3().subVectors(camera.position, target).normalize();
+                const distance = camera.position.distanceTo(target);
+                const newDistance = distance * (s / newScale);
+                camera.position.copy(direction.multiplyScalar(newDistance).add(target));
+                camera.lookAt(target);
+                if (controlsRef.current) {
+                  controlsRef.current.update();
+                }
+              }
+              return newScale;
+            });
+          }}
+        >
           <img src="/icons/zoom-in.svg" alt="zoom in icon" width={24} height={24} />
         </Button>
       </div>
 
-      <div style={{
+      <div
+        style={{
           position: "fixed",
           bottom: 50,
           left: "50%",
           transform: "translateX(-50%)",
           display: "flex",
           gap: 12,
-          zIndex: 9999, // ensure above all overlays
+          zIndex: 9999,
           background: "rgba(255,255,255,0.95)",
           padding: "4px 12px",
           borderRadius: "10px",
-          boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
-        }}>
-          {[1, 2, 3].map((index, i) => (
+          boxShadow: "0 3px 10px rgba(0,0,0,0.1)"
+        }}
+      >
+        {[1, 2, 3].map((index, i) => {
+          // Only use index 1,2,3 (never 0)
+          const preset = (contextPresets && contextPresets[index]) || (presets && presets[index]);
+          const isDisabled = loadingPresets || !preset || typeof preset.position !== 'object' || typeof preset.rotation !== 'object';
+          return (
             <IconButton
               key={index}
-              style={{ backgroundColor: "#eee", flexDirection: "column" }}
-              disabled={loadingPresets || !presets[index]}
-              onClick={() => {
-                const preset = presets[index];
-                if (preset && preset.position && preset.rotation) {
-                  setRotation({
-                    x: (preset.rotation.x || 0) * Math.PI / 180,
-                    y: (preset.rotation.y || 0) * Math.PI / 180,
-                    z: (preset.rotation.z || 0) * Math.PI / 180,
-                  });
-                  setPosition({
-                    x: preset.position.x,
-                    y: preset.position.y,
-                    z: preset.position.z
-                  });
-                  if (controlsRef.current && cameraRef.current && modelCenter && modelSize) {
-                    const controls = controlsRef.current;
-                    const center = modelCenter;
-                    const size = modelSize;
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const fov = cameraRef.current.fov * (Math.PI / 180);
-                    const distance = maxDim / (2 * Math.tan(fov / 2));
-                    cameraRef.current.position.set(center.x, center.y, center.z + distance * 1.5);
-                    cameraRef.current.lookAt(center);
-                    controls.target.set(center.x, center.y, center.z);
-                    controls.update();
-                  }
-                } else {
-                  alert(`No valid preset found for button ${index}.`);
+              style={{ backgroundColor: "#eee", flexDirection: "column", cursor: isDisabled ? 'not-allowed' : 'pointer' }}
+              disabled={isDisabled}
+              tabIndex={0}
+              onClick={e => {
+                e.stopPropagation();
+                if (isDisabled) return;
+                setRotation({
+                  x: (preset.rotation.x ?? 0) * Math.PI / 180,
+                  y: (preset.rotation.y ?? 0) * Math.PI / 180,
+                  z: (preset.rotation.z ?? 0) * Math.PI / 180,
+                });
+                setPosition({
+                  x: preset.position.x ?? 0,
+                  y: preset.position.y ?? 0,
+                  z: preset.position.z ?? 0
+                });
+                if (controlsRef.current && cameraRef.current && modelCenter && modelSize) {
+                  const controls = controlsRef.current;
+                  const center = modelCenter;
+                  const size = modelSize;
+                  const maxDim = Math.max(size.x, size.y, size.z);
+                  const fov = cameraRef.current.fov * (Math.PI / 180);
+                  const distance = maxDim / (2 * Math.tan(fov / 2));
+                  cameraRef.current.position.set(center.x, center.y, center.z + distance * 1.5);
+                  cameraRef.current.lookAt(center);
+                  controls.target.set(center.x, center.y, center.z);
+                  controls.update();
                 }
               }}
               title={["Front","Side","Back"][i]}
@@ -333,8 +429,9 @@ const ShareARPage = (props) => {
                 <img src="/icons/circle-line-icon.svg" alt={["Front","Side","Back"][i]} width={20} height={20} title={["Front","Side","Back"][i]} />
               )}
             </IconButton>
-          ))}
-          <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+          );
+        })}
+        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
       </div>
 
       <div style={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>
@@ -454,9 +551,13 @@ const ShareARPage = (props) => {
   );
 };
 
+// In GLBModel, expose modelRef globally for button access
 const GLBModel = ({ modelUrl, color, scale, position, rotation, onModelLoaded, setModelLoading }) => {
   const { scene } = useGLTF(modelUrl);
   const modelRef = useRef();
+
+  // Expose modelRef globally for button access
+  window.modelRef = modelRef;
 
   useEffect(() => {
     if (!scene || !modelRef.current) return;
@@ -486,8 +587,9 @@ const GLBModel = ({ modelUrl, color, scale, position, rotation, onModelLoaded, s
     if (modelRef.current) {
       modelRef.current.position.set(position.x, position.y, position.z);
       modelRef.current.rotation.set(rotation.x, rotation.y, rotation.z);
+      modelRef.current.scale.set(scale, scale, scale);
     }
-  }, [position, rotation]);
+  }, [position, rotation, scale]);
 
   return (
     <primitive
@@ -515,3 +617,25 @@ const buttonStyles = {
 };
 
 export default ShareARPage;
+
+// Initialize default presets in localStorage if not already present (and always overwrite if invalid)
+try {
+  let storedPresets = localStorage.getItem('transformPresets');
+  let parsed = storedPresets ? JSON.parse(storedPresets) : null;
+  const valid = Array.isArray(parsed) && parsed.length === 4 && parsed.slice(1).every(p => p && typeof p.position === 'object' && typeof p.rotation === 'object');
+  if (!valid) {
+    localStorage.setItem('transformPresets', JSON.stringify([
+      null,
+      { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } },
+      { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 90, z: 0 } },
+      { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 180, z: 0 } }
+    ]));
+  }
+} catch (e) {
+  localStorage.setItem('transformPresets', JSON.stringify([
+    null,
+    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } },
+    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 90, z: 0 } },
+    { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 180, z: 0 } }
+  ]));
+}

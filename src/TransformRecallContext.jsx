@@ -4,9 +4,9 @@ import { storage, ref, uploadBytes, getDownloadURL } from "./firebase";
 // 3 slots: 1=Front, 2=Side, 3=Back
 const defaultPresets = [
   null,
-  { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 0, z: 0 } }, // Front
-  { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 90, z: 0 } }, // Side
-  { position: { x: 0, y: 0, z: 0 }, rotation: { x: 0, y: 180, z: 0 } }, // Back
+  null, // Front (empty by default)
+  null, // Side (empty by default)
+  null, // Back (empty by default)
 ];
 
 const TransformRecallContext = createContext();
